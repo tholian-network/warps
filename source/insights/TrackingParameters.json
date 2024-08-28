@@ -1,0 +1,156 @@
+[{
+	"domains": [
+		"facebook.com",
+		"fb.com"
+	],
+	"parameters": [
+		"fbclid"
+	]
+}, {
+	"domains": [
+		"accounts.google.com",
+		"calendar.google.com",
+		"careers.google.com",
+		"chat.google.com",
+		"consent.google.com",
+		"contacts.google.com",
+		"docs.google.com",
+		"drive.google.com",
+		"encrypted.google.com",
+		"finance.google.com",
+		"group.google.com",
+		"groups.google.com",
+		"hangout.google.com",
+		"hangouts.google.com",
+		"image.google.com",
+		"images.google.com",
+		"inbox.google.com",
+		"gmail.google.com",
+		"mail.google.com",
+		"map.google.com",
+		"maps.google.com",
+		"movies.google.com",
+		"music.google.com",
+		"news.google.com",
+		"photo.google.com",
+		"photos.google.com",
+		"picasa.google.com",
+		"picasaweb.google.com",
+		"places.google.com",
+		"play.google.com",
+		"privacy.google.com",
+		"search.google.com",
+		"security.google.com",
+		"server.google.com",
+		"sheets.google.com",
+		"sites.google.com",
+		"slides.google.com",
+		"spaces.google.com",
+		"store.google.com",
+		"translate.google.com",
+		"video.google.com",
+		"videos.google.com",
+		"google.com",
+		"google.de",
+		"google.fr"
+	],
+	"parameters": [
+		"gclid"
+	]
+}, {
+	"domains": [
+		"hubspot.com"
+	],
+	"parameters": [
+		"_hsenc",
+		"_hsmi"
+	]
+}, {
+	"domains": [
+		"cdninstagram.com",
+		"instagram.com",
+		"ig.me"
+	],
+	"parameters": [
+		"igshid"
+	]
+}, {
+	"domains": [
+		"linkedin.com",
+		"linked.in",
+		"licdn.com",
+		"linkedin.cn",
+		"licdn.cn"
+	],
+	"parameters": [
+		"ccuid",
+		"cid",
+		"trackingId",
+		"mcid",
+		"midSig",
+		"midToken",
+		"refId",
+		"trk",
+		"trkEmail"
+	]
+}, {
+	"domains": [
+		"pinterest.com",
+		"pinimg.com",
+		"pinterest.net",
+		"pinterest.co.uk",
+		"pinterestmail.com",
+		"pin.it"
+	],
+	"parameters": [
+		"epik"
+	]
+}, {
+	"domains": [
+		"reddit.com",
+		"redd.it"
+	],
+	"parameters": [
+		"share_id"
+	]
+}, {
+	"domains": [
+		"yahoo.com",
+		"yimg.com",
+		"yahoodns.net",
+		"yahoo.net"
+	],
+	"parameters": [
+		"soc_src",
+		"soc_trk"
+	]
+}, {
+	"domains": [
+		"yandex.com",
+		"yandex.net",
+		"yandex.ru",
+		"yandexadexchange.net",
+		"yastatic.net",
+		"ya.ru"
+	],
+	"parameters": [
+		"_openstat",
+		"yclid"
+	]
+}, {
+	"domains": [
+		"googlevideo.com",
+		"youtu.be",
+		"youtube.com",
+		"ytimg.com"
+	],
+	"parameters": [
+		"ab_channel",
+		"bp",
+		"embeds_referring_euri",
+		"event",
+		"pp",
+		"redir_token",
+		"source_ve_path"
+	]
+}]
