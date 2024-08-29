@@ -119,7 +119,7 @@ func (resolver *DomainResolver) Listen() {
 
 						if resolver.Cache.Exists(packet) {
 
-							response := resolver.Cache.Resolve(packet)
+							response := resolver.Cache.Read(packet)
 
 							if response.Type == "response" {
 								connection.WriteTo(response.Bytes(), remote)
