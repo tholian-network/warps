@@ -72,10 +72,6 @@ func (resolver *DomainResolver) Resolve(query dns.Packet) dns.Packet {
 
 			// TODO: Tunnel request through ICMP
 
-		} else if resolver.Tunnel.Protocol == types.ProtocolTCP {
-
-			// TODO: Tunnel request through TCP
-
 		}
 
 	} else {
@@ -88,9 +84,7 @@ func (resolver *DomainResolver) Resolve(query dns.Packet) dns.Packet {
 
 }
 
-func (resolver *DomainResolver) Listen() bool {
-
-	var result bool = false
+func (resolver *DomainResolver) Listen() {
 
 	if resolver.Protocol == types.ProtocolHTTPS {
 
@@ -150,14 +144,7 @@ func (resolver *DomainResolver) Listen() bool {
 
 		}
 
-	} else if resolver.Protocol == types.ProtocolTCP {
-
-		// TODO: Parse DNS via TCP payload
-		// 2 size bytes, then DNS payload
-
 	}
-
-	return result
 
 }
 
@@ -168,8 +155,6 @@ func (resolver *DomainResolver) SetProtocol(protocol types.Protocol) {
 	} else if protocol == types.ProtocolHTTP {
 		resolver.Protocol = protocol
 	} else if protocol == types.ProtocolDNS {
-		resolver.Protocol = protocol
-	} else if protocol == types.ProtocolTCP {
 		resolver.Protocol = protocol
 	}
 

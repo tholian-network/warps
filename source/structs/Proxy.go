@@ -1,10 +1,10 @@
 package structs
 
+import "tholian-endpoint/protocols/dns"
+import "tholian-endpoint/protocols/http"
 import "tholian-warps/types"
 import "fmt"
-import "log"
-import "net/http"
-import "strconv"
+import "net"
 import "strings"
 
 type Proxy struct {
@@ -58,10 +58,17 @@ func NewProxy(host string, port uint16, cache *WebCache, tunnel *types.Tunnel, p
 
 }
 
-// func (proxy *Proxy) ServeDNS(response dns.ResponseWriter, request *dns.Request) {
-// }
+func (proxy *Proxy) ServeDNS(request dns.Packet) dns.Packet {
 
-func (proxy *Proxy) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+	var response dns.Packet
+
+	return response
+
+}
+
+func (proxy *Proxy) ServeHTTP(request http.Packet) http.Packet {
+
+	var response http.Packet
 
 	if proxy.Tunnel != nil {
 
@@ -79,14 +86,13 @@ func (proxy *Proxy) ServeHTTP(response http.ResponseWriter, request *http.Reques
 
 		}
 
-		fmt.Println("TODO: Proxy " + request.URL.String() + " through " + proxy.Tunnel.Host + ":" + strconv.FormatUint(uint64(proxy.Tunnel.Port), 10))
-		fmt.Println(request.URL)
-
 		// TODO: create request for tunnel protocol
 		// TODO: do request, wait for response
 		// TODO: after response, respond with HTTP response
 
 	} else {
+
+		fmt.Println(request)
 
 		// TODO: Send HTTP request
 		// TODO: Send HTTPS request
@@ -94,13 +100,13 @@ func (proxy *Proxy) ServeHTTP(response http.ResponseWriter, request *http.Reques
 	}
 
 
-	response.WriteHeader(http.StatusNotFound)
+	// response.WriteHeader(http.StatusNotFound)
+
+	return response
 
 }
 
-func (proxy *Proxy) Listen() bool {
-
-	var result bool = false
+func (proxy *Proxy) Listen() {
 
 	if proxy.Protocol == types.ProtocolDNS {
 
@@ -108,19 +114,47 @@ func (proxy *Proxy) Listen() bool {
 
 	} else if proxy.Protocol == types.ProtocolHTTP {
 
-		host := ""
-		port := strconv.FormatUint(uint64(proxy.Port), 10)
+		host := "0.0.0.0"
 
 		if proxy.Host != "localhost" && proxy.Host != "127.0.0.1" && proxy.Host != "0.0.0.0" {
 			host = proxy.Host
 		}
 
-		err := http.ListenAndServe(host + ":" + port, proxy)
+		listener, err1 := net.ListenTCP("tcp", &net.TCPAddr{
+			Port: int(proxy.Port),
+			IP:   net.ParseIP(host),
+		})
 
-		if err != nil {
-			log.Fatal("Port " + port + " already in use!")
-		} else {
-			result = true
+		if err1 == nil {
+
+			defer listener.Close()
+
+			for {
+
+				connection, err2 := listener.Accept()
+
+				if err2 == nil {
+
+					buffer := make([]byte, 2048)
+					length, err3 := connection.Read(buffer)
+
+					if err3 == nil {
+
+						packet := http.Parse(buffer[0:length])
+						buffer = make([]byte, 2048)
+
+						fmt.Println(length)
+
+						if 1 == 2 {
+							fmt.Println(packet)
+						}
+
+					}
+
+				}
+
+			}
+
 		}
 
 	} else if proxy.Protocol == types.ProtocolHTTPS {
@@ -128,8 +162,5 @@ func (proxy *Proxy) Listen() bool {
 		// TODO: Use ServeHTTPS
 
 	}
-
-
-	return result
 
 }

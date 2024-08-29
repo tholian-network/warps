@@ -8,7 +8,6 @@ const (
 	ProtocolHTTP
 	ProtocolDNS
 	ProtocolICMP
-	ProtocolTCP
 )
 
 func (protocol Protocol) String() string {
@@ -25,8 +24,6 @@ func (protocol Protocol) String() string {
 		result = "dns"
 	} else if protocol == ProtocolICMP {
 		result = "icmp"
-	} else if protocol == ProtocolTCP {
-		result = "tcp"
 	}
 
 	return result
