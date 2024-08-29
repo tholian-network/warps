@@ -37,9 +37,19 @@ func showUsage() {
 func main() {
 
 	var action string
+	var folder string = "/tmp/tholian-warps"
 	var host string
 	var port uint16
 	var protocol types.Protocol
+
+	xdg_cache_home := os.Getenv("XDG_CACHE_HOME")
+	home := os.Getenv("HOME")
+
+	if xdg_cache_home != "" {
+		folder = xdg_cache_home + "/tholian-warps"
+	} else if home != "" {
+		folder = home + "/tholian-warps"
+	}
 
 	if len(os.Args) > 2 {
 
@@ -112,11 +122,13 @@ func main() {
 	console.Group("tholian-warps: Command-Line Arguments")
 	console.Inspect(struct{
 		Action   string
+		Folder   string
 		Host     string
 		Port     uint16
 		Protocol string
 	}{
 		Action:   action,
+		Folder:   folder,
 		Host:     host,
 		Port:     port,
 		Protocol: protocol.String(),
@@ -125,15 +137,15 @@ func main() {
 
 	if action == "gateway" {
 
-		actions.Gateway(host, port, protocol)
+		actions.Gateway(folder, host, port, protocol)
 
 	} else if action == "tunnel" {
 
-		actions.Tunnel(host, port, protocol)
+		actions.Tunnel(folder, host, port, protocol)
 
 	} else if action == "peer" {
 
-		actions.Peer(host)
+		actions.Peer(folder, host)
 
 	} else {
 

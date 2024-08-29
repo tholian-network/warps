@@ -2,26 +2,19 @@ package actions
 
 import "tholian-warps/structs"
 import "tholian-warps/types"
-import "os"
 
-func Peer(host string) {
+func Peer(folder string, host string) {
 
-	pwd, err := os.Getwd()
+	web_cache := structs.NewWebCache(folder + "/proxy")
+	domain_cache := structs.NewDomainCache(folder + "/resolver")
 
-	if err == nil {
+	resolver := structs.NewResolver("localhost", 8053, &domain_cache, nil)
+	http_proxy := structs.NewProxy("localhost", 8080, &web_cache, nil, types.ProtocolHTTP)
+	https_proxy := structs.NewProxy("localhost", 8181, &web_cache, nil, types.ProtocolHTTPS)
 
-		web_cache := structs.NewWebCache(pwd + "/tholian-warps/proxy")
-		domain_cache := structs.NewDomainCache(pwd + "/tholian-warps/resolver")
+	go resolver.Listen()
+	go https_proxy.Listen()
 
-		resolver := structs.NewResolver("localhost", 8053, &domain_cache, nil)
-		http_proxy := structs.NewProxy("localhost", 8080, &web_cache, nil, types.ProtocolHTTP)
-		https_proxy := structs.NewProxy("localhost", 8181, &web_cache, nil, types.ProtocolHTTPS)
-
-		go resolver.Listen()
-		go https_proxy.Listen()
-
-		http_proxy.Listen()
-
-	}
+	http_proxy.Listen()
 
 }
