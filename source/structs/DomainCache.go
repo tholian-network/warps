@@ -1,5 +1,6 @@
 package structs
 
+import "tholian-endpoint/protocols/dns"
 import "os"
 import "strings"
 
@@ -32,5 +33,30 @@ func NewDomainCache(folder string) DomainCache {
 	}
 
 	return cache
+
+}
+
+func (cache *DomainCache) Exists(query dns.Packet) bool {
+
+	var result bool = false
+
+
+	return result
+
+}
+
+func (cache *DomainCache) Resolve(query dns.Packet) dns.Packet {
+
+	var response dns.Packet
+
+	return response
+
+}
+
+func (cache *DomainCache) Write(response dns.Packet) bool {
+
+	var result bool = false
+
+	return result
 
 }
