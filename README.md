@@ -22,7 +22,7 @@ build a reliable mesh network that's based on a peer-to-peer architecture.
 5. A Warps `gateway` or `peer` uses `DNS over TLS` to resolve relayed DNS queries.
 6. A Warps `peer` instance can tunnel through another Warps `gateway` or `peer` instance.
 
-![network-architecture.png](./assets/network-architecture.png)
+![network-architecture.png](https://github.com/tholian-network/warps/blob/master/assets/network-chart.png?raw=true)
 
 
 # Usage
