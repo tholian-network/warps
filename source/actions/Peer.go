@@ -1,9 +1,12 @@
 package actions
 
+import "tholian-warps/console"
 import "tholian-warps/structs"
 import "tholian-warps/types"
 
 func Peer(folder string, host string) {
+
+	console.Group("actions/Peer")
 
 	web_cache := structs.NewWebCache(folder + "/proxy")
 	domain_cache := structs.NewDomainCache(folder + "/resolver")
@@ -12,9 +15,39 @@ func Peer(folder string, host string) {
 	http_proxy := structs.NewProxy("localhost", 8080, &web_cache, nil, types.ProtocolHTTP)
 	https_proxy := structs.NewProxy("localhost", 8181, &web_cache, nil, types.ProtocolHTTPS)
 
-	go resolver.Listen()
-	go https_proxy.Listen()
+	http_proxy.Resolver = &resolver
+	https_proxy.Resolver = &resolver
 
-	http_proxy.Listen()
+	console.Log("Listening on dns://localhost:8053")
+	console.Log("Listening on http://localhost:8080")
+	console.Log("Listening on https://localhost:8181")
+
+	go func() {
+
+		err := resolver.Listen()
+
+		if err != nil {
+			console.Error(err.Error())
+		}
+
+	}()
+
+	go func() {
+
+		err := https_proxy.Listen()
+
+		if err != nil {
+			console.Error(err.Error())
+		}
+
+	}()
+
+	err := http_proxy.Listen()
+
+	if err != nil {
+		console.Error(err.Error())
+	}
+
+	console.GroupEnd("actions/Peer")
 
 }

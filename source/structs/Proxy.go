@@ -2,17 +2,19 @@ package structs
 
 import "tholian-endpoint/protocols/dns"
 import "tholian-endpoint/protocols/http"
+import endpoint_types "tholian-endpoint/types"
+import "tholian-warps/console"
 import "tholian-warps/types"
-import "fmt"
 import "net"
 import "strings"
 
 type Proxy struct {
-	Host     string         `json:"host"`
-	Port     uint16         `json:"port"`
-	Protocol types.Protocol `json:"protocol"`
-	Cache    *WebCache      `json:"cache"`
-	Tunnel   *types.Tunnel  `json:"tunnel"`
+	Host     string          `json:"host"`
+	Port     uint16          `json:"port"`
+	Protocol types.Protocol  `json:"protocol"`
+	Cache    *WebCache       `json:"cache"`
+	Tunnel   *types.Tunnel   `json:"tunnel"`
+	Resolver *DomainResolver `json:"resolver"`
 }
 
 func NewProxy(host string, port uint16, cache *WebCache, tunnel *types.Tunnel, protocol types.Protocol) Proxy {
@@ -58,9 +60,9 @@ func NewProxy(host string, port uint16, cache *WebCache, tunnel *types.Tunnel, p
 
 }
 
-func (proxy *Proxy) ServeDNS(request dns.Packet) dns.Packet {
+func (proxy *Proxy) ServeDNS(request dns.Packet) http.Packet {
 
-	var response dns.Packet
+	var response http.Packet
 
 	return response
 
@@ -92,21 +94,73 @@ func (proxy *Proxy) ServeHTTP(request http.Packet) http.Packet {
 
 	} else {
 
-		fmt.Println(request)
+		if request.URL.Scheme == "http" || request.URL.Scheme == "https" {
 
-		// TODO: Send HTTP request
-		// TODO: Send HTTPS request
+			if endpoint_types.IsIPv6AndPort(request.URL.Host) {
+
+				// TODO
+
+			} else if endpoint_types.IsIPv6(request.URL.Host) {
+
+				// TODO
+
+			} else if endpoint_types.IsIPv4AndPort(request.URL.Host) {
+
+				// TODO
+
+			} else if endpoint_types.IsIPv4(request.URL.Host) {
+
+				// TODO
+
+			} else if endpoint_types.IsDomainAndPort(request.URL.Host) {
+
+				// TODO
+
+			} else if endpoint_types.IsDomain(request.URL.Host) {
+
+				if proxy.Resolver != nil {
+
+					dns_packet := proxy.Resolver.Resolve(request.URL.Host)
+
+					if dns_packet.Type == "response" {
+
+						// TODO: Generate server entry from dns_packet
+						// TODO: packet.SetServer(server)
+
+					}
+
+				} else {
+
+					dns_packet := dns.Resolve(request.URL.Host)
+
+					if dns_packet.Type == "response" {
+
+						// TODO: Generate server entry from dns_packet
+						// TODO: packet.SetServer(server)
+
+					}
+
+				}
+
+			}
+
+			data := http.Request(request)
+
+			if 1 == 2 {
+				console.Inspect(data)
+			}
+
+		}
 
 	}
-
-
-	// response.WriteHeader(http.StatusNotFound)
 
 	return response
 
 }
 
-func (proxy *Proxy) Listen() {
+func (proxy *Proxy) Listen() error {
+
+	var err error = nil
 
 	if proxy.Protocol == types.ProtocolDNS {
 
@@ -143,10 +197,23 @@ func (proxy *Proxy) Listen() {
 						packet := http.Parse(buffer[0:length])
 						buffer = make([]byte, 2048)
 
-						fmt.Println(length)
+						if string(packet.Method) != "" {
 
-						if 1 == 2 {
-							fmt.Println(packet)
+							response := proxy.ServeHTTP(packet)
+
+							if response.Status.String() != "" {
+
+								connection.Write(response.Bytes())
+
+							} else {
+
+								response := http.NewPacket()
+								response.SetStatus(http.StatusInternalServerError)
+
+								connection.Write(response.Bytes())
+
+							}
+
 						}
 
 					}
@@ -155,6 +222,8 @@ func (proxy *Proxy) Listen() {
 
 			}
 
+		} else {
+			err = err1
 		}
 
 	} else if proxy.Protocol == types.ProtocolHTTPS {
@@ -162,5 +231,7 @@ func (proxy *Proxy) Listen() {
 		// TODO: Use ServeHTTPS
 
 	}
+
+	return err
 
 }

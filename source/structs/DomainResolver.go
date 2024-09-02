@@ -1,6 +1,7 @@
 package structs
 
 import "tholian-endpoint/protocols/dns"
+import endpoint_types "tholian-endpoint/types"
 import "tholian-warps/types"
 import "net"
 import "strings"
@@ -50,33 +51,18 @@ func NewResolver(host string, port uint16, cache *DomainCache, tunnel *types.Tun
 
 }
 
-func (resolver *DomainResolver) Resolve(query dns.Packet) dns.Packet {
+func (resolver *DomainResolver) Resolve(domain string) dns.Packet {
 
 	var response dns.Packet
 
-	if resolver.Tunnel != nil {
+	if endpoint_types.IsDomain(domain) {
 
-		if resolver.Tunnel.Protocol == types.ProtocolHTTPS {
+		query := dns.NewPacket()
+		query.SetType("query")
+		query.AddQuestion(dns.NewQuestion(domain, dns.TypeA))
+		query.AddQuestion(dns.NewQuestion(domain, dns.TypeAAAA))
 
-			// TODO: Tunnel request through HTTPS
-
-		} else if resolver.Tunnel.Protocol == types.ProtocolHTTP {
-
-			// TODO: Tunnel request through HTTP
-
-		} else if resolver.Tunnel.Protocol == types.ProtocolDNS {
-
-			// TODO: Tunnel request through DNS
-
-		} else if resolver.Tunnel.Protocol == types.ProtocolICMP {
-
-			// TODO: Tunnel request through ICMP
-
-		}
-
-	} else {
-
-		response = dns.ResolvePacket(query)
+		response = resolver.ResolvePacket(query)
 
 	}
 
@@ -84,7 +70,52 @@ func (resolver *DomainResolver) Resolve(query dns.Packet) dns.Packet {
 
 }
 
-func (resolver *DomainResolver) Listen() {
+func (resolver *DomainResolver) ResolvePacket(query dns.Packet) dns.Packet {
+
+	var response dns.Packet
+
+	if resolver.Cache.Exists(query) {
+
+		response = resolver.Cache.Read(query)
+
+	} else {
+
+		if resolver.Tunnel != nil {
+
+			if resolver.Tunnel.Protocol == types.ProtocolHTTPS {
+
+				// TODO: Tunnel request through HTTPS
+
+			} else if resolver.Tunnel.Protocol == types.ProtocolHTTP {
+
+				// TODO: Tunnel request through HTTP
+
+			} else if resolver.Tunnel.Protocol == types.ProtocolDNS {
+
+				// TODO: Tunnel request through DNS
+
+			} else if resolver.Tunnel.Protocol == types.ProtocolICMP {
+
+				// TODO: Tunnel request through ICMP
+
+			}
+
+		} else {
+
+			response = dns.ResolvePacket(query)
+
+		}
+
+	}
+
+
+	return response
+
+}
+
+func (resolver *DomainResolver) Listen() error {
+
+	var err error = nil
 
 	if resolver.Protocol == types.ProtocolHTTPS {
 
@@ -117,23 +148,11 @@ func (resolver *DomainResolver) Listen() {
 
 					if packet.Type == "query" && len(packet.Questions) > 0 {
 
-						if resolver.Cache.Exists(packet) {
+						response := resolver.ResolvePacket(packet)
 
-							response := resolver.Cache.Read(packet)
-
-							if response.Type == "response" {
-								connection.WriteTo(response.Bytes(), remote)
-							}
-
-						} else {
-
-							response := resolver.Resolve(packet)
-
-							if response.Type == "response" {
-								resolver.Cache.Write(response)
-								connection.WriteTo(response.Bytes(), remote)
-							}
-
+						if response.Type == "response" {
+							resolver.Cache.Write(response)
+							connection.WriteTo(response.Bytes(), remote)
 						}
 
 					}
@@ -142,9 +161,13 @@ func (resolver *DomainResolver) Listen() {
 
 			}
 
+		} else {
+			err = err1
 		}
 
 	}
+
+	return err
 
 }
 

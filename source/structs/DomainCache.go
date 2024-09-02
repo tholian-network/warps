@@ -112,7 +112,8 @@ func (cache *DomainCache) Exists(query dns.Packet) bool {
 
 		for q := 0; q < len(query.Questions); q++ {
 
-			resolved := cache.Resolve(query.Questions[q].Name, query.Questions[q].Type)
+			question := query.Questions[q]
+			resolved := question.Name + "/" + question.Type.String() + ".json"
 			found := false
 
 			if resolved != "" {
@@ -131,18 +132,6 @@ func (cache *DomainCache) Exists(query dns.Packet) bool {
 
 		}
 
-	}
-
-	return result
-
-}
-
-func (cache *DomainCache) Resolve(domain string, typ dns.Type) string {
-
-	var result string
-
-	if !strings.Contains(domain, "..") && !strings.Contains(domain, "/") {
-		result = domain + "/" + typ.String() + ".json"
 	}
 
 	return result
@@ -168,7 +157,7 @@ func (cache *DomainCache) Read(query dns.Packet) dns.Packet {
 		for q := 0; q < len(query.Questions); q++ {
 
 			question := query.Questions[q]
-			resolved := cache.Resolve(question.Name, question.Type)
+			resolved := question.Name + "/" + question.Type.String() + ".json"
 
 			if resolved != "" {
 
@@ -203,7 +192,7 @@ func (cache *DomainCache) Write(response dns.Packet) bool {
 		for a := 0; a < len(response.Answers); a++ {
 
 			record := response.Answers[a]
-			resolved := cache.Resolve(record.Name, record.Type)
+			resolved := record.Name + "/" + record.Type.String() + ".json"
 
 			if resolved != "" {
 
