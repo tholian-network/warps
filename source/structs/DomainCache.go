@@ -142,7 +142,7 @@ func (cache *DomainCache) Read(query dns.Packet) dns.Packet {
 
 	var response dns.Packet
 
-	if len(query.Questions) > 0 {
+	if query.Type == "query" && len(query.Questions) > 0 {
 
 		response.SetIdentifier(query.Identifier)
 		response.SetType("response")
@@ -187,7 +187,7 @@ func (cache *DomainCache) Write(response dns.Packet) bool {
 
 	var result bool = false
 
-	if len(response.Answers) > 0 {
+	if response.Type == "response" && len(response.Answers) > 0 {
 
 		for a := 0; a < len(response.Answers); a++ {
 

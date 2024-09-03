@@ -1,10 +1,69 @@
 package structs
 
+import "tholian-endpoint/protocols/http"
 import warps_url "tholian-warps/net/url"
 import "os"
 import net_url "net/url"
 import "sort"
 import "strings"
+
+func resolveWebCacheFile(url *net_url.URL) string {
+
+	result := ""
+	tmp := strings.Split(url.Path, "/")
+
+	if len(tmp) > 1 {
+
+		if tmp[0] == "" && strings.Contains(tmp[len(tmp)-1], ".") {
+			result = url.Host + "/" + url.Path[1:]
+		} else if tmp[0] == "" && strings.TrimSpace(tmp[len(tmp)-1]) != "" {
+			result = url.Host + "/" + url.Path[1:]
+		} else {
+			result = url.Host + "/" + url.Path[1:len(url.Path)-1] + "/index.html"
+		}
+
+	} else {
+
+		result = url.Host + "/index.html"
+
+	}
+
+	query := url.Query()
+
+	if len(query) > 0 {
+
+		parameters := []string{}
+
+		for key := range query {
+
+			val := query.Get(key)
+
+			if !warps_url.IsXSSParameter(key, val) && !warps_url.IsTrackingParameter(url.Host, key, val) {
+				parameters = append(parameters, key)
+			}
+
+		}
+
+		sort.Strings(parameters)
+
+		for p := 0; p < len(parameters); p++ {
+
+			key := parameters[p]
+			val := query.Get(key)
+
+			if p == 0 {
+				result += "?" + key + "=" + val
+			} else {
+				result += "&" + key + "=" + val
+			}
+
+		}
+
+	}
+
+	return result
+
+}
 
 type WebCache struct {
 	Folder string `json:"folder"`
@@ -38,15 +97,13 @@ func NewWebCache(folder string) WebCache {
 
 }
 
-func (cache *WebCache) Exists(raw_url string) bool {
+func (cache *WebCache) Exists(request http.Packet) bool {
 
 	var result bool = false
 
-	url, err0 := net_url.Parse(raw_url)
+	if request.Type == "request" && request.URL != nil {
 
-	if err0 == nil {
-
-		resolved := cache.Resolve(url)
+		resolved := resolveWebCacheFile(request.URL)
 
 		if resolved != "" {
 
@@ -69,61 +126,31 @@ func (cache *WebCache) Exists(raw_url string) bool {
 
 }
 
-func (cache *WebCache) Resolve(url *net_url.URL) string {
+func (cache *WebCache) Read(request http.Packet) http.Packet {
 
-	resolved := ""
+	var response http.Packet
 
-	tmp := strings.Split(url.Path, "/")
-
-	if len(tmp) > 1 {
-
-		if tmp[0] == "" && strings.Contains(tmp[len(tmp)-1], ".") {
-			resolved = url.Host + "/" + url.Path[1:]
-		} else if tmp[0] == "" && tmp[len(tmp)-1] != "" {
-			resolved = url.Host + "/" + url.Path[1:]
-		} else {
-			resolved = url.Host + "/" + url.Path[1:] + "index.html"
-		}
-
-	} else {
-
-		resolved = url.Host + "/index.html"
-
+	if request.Type == "request" && request.URL != nil {
+		// TODO: Transfer-Encoding
+		// TODO: Content-Encoding
+		// TODO: Store as plaintext!
 	}
 
-	query := url.Query()
-
-	if len(query) > 0 {
-
-		parameters := []string{}
-
-		for key := range query {
-
-			val := query.Get(key)
-
-			if !warps_url.IsXSSParameter(key, val) && !warps_url.IsTrackingParameter(url.Host, key, val) {
-				parameters = append(parameters, key)
-			}
-
-		}
-
-		sort.Strings(parameters)
-
-		for p := 0; p < len(parameters); p++ {
-
-			key := parameters[p]
-			val := query.Get(key)
-
-			if p == 0 {
-				resolved += "?" + key + "=" + val
-			} else {
-				resolved += "&" + key + "=" + val
-			}
-
-		}
-
-	}
-
-	return resolved
+	return response
 
 }
+
+func (cache *WebCache) Write(response http.Packet) bool {
+
+	var result bool = false
+
+	if response.Type == "response" && response.URL != nil {
+		// TODO: Transfer-Encoding
+		// TODO: Content-Encoding
+		// TODO: Store as plaintext!
+	}
+
+	return result
+
+}
+

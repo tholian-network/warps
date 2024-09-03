@@ -2,8 +2,6 @@ package structs
 
 import "tholian-endpoint/protocols/dns"
 import "tholian-endpoint/protocols/http"
-import endpoint_types "tholian-endpoint/types"
-import "tholian-warps/console"
 import "tholian-warps/types"
 import "net"
 import "strings"
@@ -60,15 +58,7 @@ func NewProxy(host string, port uint16, cache *WebCache, tunnel *types.Tunnel, p
 
 }
 
-func (proxy *Proxy) ServeDNS(request dns.Packet) http.Packet {
-
-	var response http.Packet
-
-	return response
-
-}
-
-func (proxy *Proxy) ServeHTTP(request http.Packet) http.Packet {
+func (proxy *Proxy) RequestPacket(request http.Packet) http.Packet {
 
 	var response http.Packet
 
@@ -94,61 +84,29 @@ func (proxy *Proxy) ServeHTTP(request http.Packet) http.Packet {
 
 	} else {
 
-		if request.URL.Scheme == "http" || request.URL.Scheme == "https" {
+		if proxy.Resolver != nil {
 
-			if endpoint_types.IsIPv6AndPort(request.URL.Host) {
+			request.SetResolveMethod(func(domain string) dns.Packet {
+				return proxy.Resolver.Resolve(domain)
+			})
+			request.Resolve()
 
-				// TODO
+		} else {
+			request.Resolve()
+		}
 
-			} else if endpoint_types.IsIPv6(request.URL.Host) {
-
-				// TODO
-
-			} else if endpoint_types.IsIPv4AndPort(request.URL.Host) {
-
-				// TODO
-
-			} else if endpoint_types.IsIPv4(request.URL.Host) {
-
-				// TODO
-
-			} else if endpoint_types.IsDomainAndPort(request.URL.Host) {
-
-				// TODO
-
-			} else if endpoint_types.IsDomain(request.URL.Host) {
-
-				if proxy.Resolver != nil {
-
-					dns_packet := proxy.Resolver.Resolve(request.URL.Host)
-
-					if dns_packet.Type == "response" {
-
-						// TODO: Generate server entry from dns_packet
-						// TODO: packet.SetServer(server)
-
-					}
-
-				} else {
-
-					dns_packet := dns.Resolve(request.URL.Host)
-
-					if dns_packet.Type == "response" {
-
-						// TODO: Generate server entry from dns_packet
-						// TODO: packet.SetServer(server)
-
-					}
-
-				}
-
-			}
+		if request.Server != nil {
 
 			data := http.Request(request)
 
-			if 1 == 2 {
-				console.Inspect(data)
+			if data.Type == "response" {
+				response = data
 			}
+
+		} else {
+
+			// TODO: Respond with a new packet response
+			// TODO: Status 500 Internal Server Error?
 
 		}
 
@@ -197,13 +155,16 @@ func (proxy *Proxy) Listen() error {
 						packet := http.Parse(buffer[0:length])
 						buffer = make([]byte, 2048)
 
-						if string(packet.Method) != "" {
+						if packet.Method.String() != "" {
 
-							response := proxy.ServeHTTP(packet)
+							response := proxy.RequestPacket(packet)
 
-							if response.Status.String() != "" {
+							if response.Type == "response" {
 
+								proxy.Cache.Write(response)
 								connection.Write(response.Bytes())
+
+								connection.Close()
 
 							} else {
 
@@ -211,6 +172,7 @@ func (proxy *Proxy) Listen() error {
 								response.SetStatus(http.StatusInternalServerError)
 
 								connection.Write(response.Bytes())
+								connection.Close()
 
 							}
 
