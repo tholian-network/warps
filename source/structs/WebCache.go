@@ -1,7 +1,7 @@
 package structs
 
 import "tholian-endpoint/protocols/http"
-import warps_url "tholian-warps/net/url"
+import utils_url "tholian-warps/utils/net/url"
 import "os"
 import net_url "net/url"
 import "sort"
@@ -38,7 +38,7 @@ func resolveWebCacheFile(url *net_url.URL) string {
 
 			val := query.Get(key)
 
-			if !warps_url.IsXSSParameter(key, val) && !warps_url.IsTrackingParameter(url.Host, key, val) {
+			if !utils_url.IsXSSParameter(key, val) && !utils_url.IsTrackingParameter(url.Host, key, val) {
 				parameters = append(parameters, key)
 			}
 

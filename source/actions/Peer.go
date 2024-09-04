@@ -13,14 +13,14 @@ func Peer(folder string, host string) {
 
 	resolver := structs.NewResolver("localhost", 8053, &domain_cache, nil)
 	http_proxy := structs.NewProxy("localhost", 8080, &web_cache, nil, types.ProtocolHTTP)
-	https_proxy := structs.NewProxy("localhost", 8181, &web_cache, nil, types.ProtocolHTTPS)
+	https_proxy := structs.NewProxy("localhost", 8443, &web_cache, nil, types.ProtocolHTTPS)
 
-	http_proxy.Resolver = &resolver
-	https_proxy.Resolver = &resolver
+	http_proxy.SetResolver(&resolver)
+	https_proxy.SetResolver(&resolver)
 
 	console.Log("Listening on dns://localhost:8053")
 	console.Log("Listening on http://localhost:8080")
-	console.Log("Listening on https://localhost:8181")
+	console.Log("Listening on https://localhost:8443")
 
 	go func() {
 

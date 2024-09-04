@@ -2,8 +2,13 @@ package structs
 
 import "tholian-endpoint/protocols/dns"
 import "tholian-endpoint/protocols/http"
+import "tholian-warps/console"
 import "tholian-warps/types"
+import utils_net "tholian-warps/utils/net"
+import "crypto/tls"
+// import "io"
 import "net"
+import "strconv"
 import "strings"
 
 type Proxy struct {
@@ -84,6 +89,8 @@ func (proxy *Proxy) RequestPacket(request http.Packet) http.Packet {
 
 	} else {
 
+		console.Inspect(request)
+
 		if proxy.Resolver != nil {
 
 			request.SetResolveMethod(func(domain string) dns.Packet {
@@ -98,6 +105,7 @@ func (proxy *Proxy) RequestPacket(request http.Packet) http.Packet {
 		if request.Server != nil {
 
 			data := http.Request(request)
+			console.Inspect(data)
 
 			if data.Type == "response" {
 				response = data
@@ -139,23 +147,61 @@ func (proxy *Proxy) Listen() error {
 
 		if err1 == nil {
 
-			defer listener.Close()
-
 			for {
 
 				connection, err2 := listener.Accept()
 
 				if err2 == nil {
 
-					buffer := make([]byte, 2048)
-					length, err3 := connection.Read(buffer)
+					buffer := utils_net.ReadConnection(connection)
 
-					if err3 == nil {
+					if len(buffer) > 0 {
 
-						packet := http.Parse(buffer[0:length])
-						buffer = make([]byte, 2048)
+						packet := http.Parse(buffer)
 
-						if packet.Method.String() != "" {
+						if packet.Method == http.MethodConnect {
+
+							console.Warn("CONNECT")
+							console.Inspect(packet)
+
+							// connection.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+							connection.Write([]byte("HTTP/1.1 401 Unauthorized\r\n\r\n"))
+
+							// TODO: Remove this
+							connection.Close()
+
+							// TODO: This is wrong, because CONNECT should directly connect and not delegate via TLS connection
+
+							// proxied_connection, err1 := net.DialTCP("tcp", nil, &net.TCPAddr{
+							// 	IP:   net.ParseIP("127.0.0.1"),
+							// 	Port: int(8443),
+							// })
+
+							// if err1 == nil {
+
+							// 	channel := make(chan error, 1)
+
+							// 	io_copy := func(read net.Conn, write net.Conn) {
+							// 		_, err := io.Copy(read, write)
+							// 		channel <- err
+							// 	}
+
+							// 	go io_copy(connection, proxied_connection)
+							// 	go io_copy(proxied_connection, connection)
+
+							// 	err1 := <-channel
+							// 	err2 := <-channel
+
+							// 	if err1 != nil || err2 != nil {
+							// 		break
+							// 	}
+
+							// 	defer connection.Close()
+							// 	defer proxied_connection.Close()
+
+							// }
+
+						} else if packet.Method.String() != "" {
 
 							response := proxy.RequestPacket(packet)
 
@@ -180,6 +226,8 @@ func (proxy *Proxy) Listen() error {
 
 					}
 
+					defer connection.Close()
+
 				}
 
 			}
@@ -190,10 +238,82 @@ func (proxy *Proxy) Listen() error {
 
 	} else if proxy.Protocol == types.ProtocolHTTPS {
 
-		// TODO: Use ServeHTTPS
+		host := "0.0.0.0:8443"
+
+		if proxy.Host != "localhost" && proxy.Host != "127.0.0.1" && proxy.Host != "0.0.0.0" {
+			host = proxy.Host + ":" + strconv.Itoa(int(proxy.Port))
+		}
+
+		listener, err1 := tls.Listen("tcp", host, &tls.Config{
+			Certificates: []tls.Certificate{*Certificate},
+			MaxVersion:   tls.VersionTLS12,
+		})
+
+		if err1 == nil {
+
+			for {
+
+				connection, err2 := listener.Accept()
+
+				if err2 == nil {
+
+					buffer := utils_net.ReadConnection(connection)
+
+					if len(buffer) > 0 {
+
+						packet := http.Parse(buffer)
+
+						if packet.Type == "request" && packet.Method.String() != "" {
+
+							if packet.URL.Scheme == "" && packet.URL.Host == "" {
+
+								hostname, _ := packet.Headers["Host"]
+
+								if hostname != "" {
+									packet.URL.Host = hostname
+									packet.URL.Scheme = "https"
+								}
+
+							}
+
+							response := proxy.RequestPacket(packet)
+
+							if response.Type == "response" {
+
+								proxy.Cache.Write(response)
+								connection.Write(response.Bytes())
+
+							} else {
+
+								response := http.NewPacket()
+								response.SetStatus(http.StatusInternalServerError)
+
+								connection.Write(response.Bytes())
+
+							}
+
+						}
+
+					}
+
+					defer connection.Close()
+
+				} else {
+					defer connection.Close()
+				}
+
+			}
+
+		} else {
+			err = err1
+		}
 
 	}
 
 	return err
 
+}
+
+func (proxy *Proxy) SetResolver(resolver *DomainResolver) {
+	proxy.Resolver = resolver
 }
