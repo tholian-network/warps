@@ -3,18 +3,17 @@ package dns
 import "tholian-endpoint/protocols/dns"
 import "tholian-endpoint/types"
 import "tholian-warps/interfaces"
-import "tholian-warps/structs"
 import "net"
 import "strings"
 
 type Resolver struct {
-	Host   string               `json:"host"`
-	Port   uint16               `json:"port"`
-	Cache  *structs.DomainCache `json:"cache"`
-	Tunnel interfaces.Tunnel    `json:"tunnel"`
+	Host   string                   `json:"host"`
+	Port   uint16                   `json:"port"`
+	Cache  interfaces.ResolverCache `json:"cache"`
+	Tunnel interfaces.Tunnel        `json:"tunnel"`
 }
 
-func NewResolver(host string, port uint16, cache *structs.DomainCache) Resolver {
+func NewResolver(host string, port uint16, cache interfaces.ResolverCache) Resolver {
 
 	var resolver Resolver
 
@@ -63,7 +62,7 @@ func (resolver *Resolver) ResolvePacket(query dns.Packet) dns.Packet {
 
 	var response dns.Packet
 
-	if resolver.Cache.Exists(query) {
+	if resolver.Cache != nil && resolver.Cache.Exists(query) {
 		response = resolver.Cache.Read(query)
 	} else if resolver.Tunnel != nil {
 		response = resolver.Tunnel.ResolvePacket(query)

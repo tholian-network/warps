@@ -4,21 +4,20 @@ import "tholian-endpoint/protocols/dns"
 import "tholian-endpoint/protocols/http"
 import "tholian-warps/console"
 import "tholian-warps/interfaces"
-import "tholian-warps/structs"
 import utils_net "tholian-warps/utils/net"
 import "encoding/base64"
 import "net"
 import "strings"
 
 type Proxy struct {
-	Host     string              `json:"host"`
-	Port     uint16              `json:"port"`
-	Cache    *structs.WebCache   `json:"cache"`
-	Tunnel   interfaces.Tunnel   `json:"tunnel"`
-	Resolver interfaces.Resolver `json:"resolver"`
+	Host     string                `json:"host"`
+	Port     uint16                `json:"port"`
+	Cache    interfaces.ProxyCache `json:"cache"`
+	Tunnel   interfaces.Tunnel     `json:"tunnel"`
+	Resolver interfaces.Resolver   `json:"resolver"`
 }
 
-func NewProxy(host string, port uint16, cache *structs.WebCache) Proxy {
+func NewProxy(host string, port uint16, cache interfaces.ProxyCache) Proxy {
 
 	var proxy Proxy
 
@@ -50,10 +49,10 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 
 	var response dns.Packet
 
-	if proxy.Tunnel != nil {
-		response = proxy.Tunnel.ResolvePacket(query)
-	} else if proxy.Resolver != nil {
+	if proxy.Resolver != nil {
 		response = proxy.Resolver.ResolvePacket(query)
+	} else if proxy.Tunnel != nil {
+		response = proxy.Tunnel.ResolvePacket(query)
 	} else {
 		response = dns.ResolvePacket(query)
 	}
@@ -66,7 +65,11 @@ func (proxy *Proxy) RequestPacket(request http.Packet) http.Packet {
 
 	var response http.Packet
 
-	if proxy.Tunnel != nil {
+	if proxy.Cache != nil && proxy.Cache.Exists(request) {
+
+		response = proxy.Cache.Read(request)
+
+	} else if proxy.Tunnel != nil {
 
 		response = proxy.Tunnel.RequestPacket(request)
 
