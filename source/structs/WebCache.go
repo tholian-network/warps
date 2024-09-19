@@ -131,6 +131,18 @@ func (cache *WebCache) Read(request http.Packet) http.Packet {
 	var response http.Packet
 
 	if request.Type == "request" && request.URL != nil {
+
+		resolved := resolveWebCacheFile(request.URL)
+
+		if resolved != "" {
+
+			// buffer1, err1 := os.ReadFile(cache.Folder + "/headers/" + resolved)
+			// buffer2, err2 := os.ReadFile(cache.Folder + "/payload/" + resolved)
+
+			// TODO: Find out a way to serialize headers from http Packets
+
+		}
+
 		// TODO: Transfer-Encoding
 		// TODO: Content-Encoding
 		// TODO: Store as plaintext!

@@ -1,28 +1,55 @@
 package actions
 
+import "tholian-endpoint/types"
 import "tholian-warps/console"
+import "tholian-warps/protocols/dns"
+import "tholian-warps/protocols/http"
+// import "tholian-warps/protocols/https"
 import "tholian-warps/structs"
-import "tholian-warps/types"
 
 func Tunnel(folder string, host string, port uint16, protocol types.Protocol) {
 
 	console.Group("actions/Tunnel")
 
 	web_cache := structs.NewWebCache(folder + "/proxy")
-	domain_cache := structs.NewDomainCache(folder + "/resolver")
+	dns_cache := structs.NewDomainCache(folder + "/resolver")
 
-	tunnel := types.Tunnel{
-		Host:     host,
-		Port:     port,
-		Protocol: protocol,
-	}
+	resolver := dns.NewResolver("localhost", 8053, &dns_cache)
 
-	resolver := structs.NewResolver("localhost", 8053, &domain_cache, &tunnel)
-	http_proxy := structs.NewProxy("localhost", 8080, &web_cache, &tunnel, types.ProtocolHTTP)
-	https_proxy := structs.NewProxy("localhost", 8443, &web_cache, &tunnel, types.ProtocolHTTPS)
-
+	http_proxy := http.NewProxy("localhost", 8080, &web_cache)
 	http_proxy.SetResolver(&resolver)
-	https_proxy.SetResolver(&resolver)
+
+	// TODO
+	// https_proxy := https.NewProxy("localhost", 8443, &web_cache)
+	// https_proxy.SetResolver(&resolver)
+
+	if protocol == types.ProtocolDNS {
+
+		// TODO
+		// tunnel := dns.NewTunnel(host, port)
+
+		// resolver.SetTunnel(&tunnel)
+		// http_proxy.SetTunnel(&tunnel)
+		// https_proxy.SetTunnel(&tunnel)
+
+	} else if protocol == types.ProtocolHTTP {
+
+		tunnel := http.NewTunnel(host, port)
+
+		resolver.SetTunnel(&tunnel)
+		http_proxy.SetTunnel(&tunnel)
+		// https_proxy.SetTunnel(&tunnel)
+
+	} else if protocol == types.ProtocolHTTPS {
+
+		// TODO
+		// tunnel := https.NewTunnel(host, port)
+
+		// resolver.SetTunnel(&tunnel)
+		// http_proxy.SetTunnel(&tunnel)
+		// https_proxy.SetTunnel(&tunnel)
+
+	}
 
 	console.Log("Listening on dns://localhost:8053")
 	console.Log("Listening on http://localhost:8080")
@@ -38,15 +65,15 @@ func Tunnel(folder string, host string, port uint16, protocol types.Protocol) {
 
 	}()
 
-	go func() {
+	// go func() {
 
-		err := https_proxy.Listen()
+	// 	err := https_proxy.Listen()
 
-		if err != nil {
-			console.Error(err.Error())
-		}
+	// 	if err != nil {
+	// 		console.Error(err.Error())
+	// 	}
 
-	}()
+	// }()
 
 	err := http_proxy.Listen()
 
