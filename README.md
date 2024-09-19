@@ -94,6 +94,26 @@ sudo cp ./build/tholian-warps /usr/bin/tholian-warps;
 tholian-warps;
 ```
 
+
+# Features
+
+These are the pluggable transport protocols that have been implemented
+so far already:
+
+- [ ] [compressors/css](/source/compressors/css)
+- [ ] [compressors/html](/source/compressors/html)
+- [ ] [compressors/js](/source/compressors/js)
+- [ ] [compressors/jpeg](/source/compressors/jpeg)
+- [ ] [compressors/png](/source/compressors/png)
+
+- [ ] [protocols/dns](/source/protocols/dns)
+- [x] [protocols/http](/source/protocols/http)
+- [ ] [protocols/https](/source/protocols/https)
+- [ ] [protocols/icmp](/source/protocols/icmp)
+- [ ] [protocols/ssh](/source/protocols/ssh)
+- [ ] [protocols/socks](/source/protocols/socks)
+
+
 # License
 
 AGPL3
