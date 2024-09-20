@@ -78,7 +78,7 @@ func (resolver *Resolver) Listen() error {
 
 	var err error = nil
 
-	connection, err1 := net.ListenUDP("udp", &net.UDPAddr{
+	listener, err1 := net.ListenUDP("udp", &net.UDPAddr{
 		Port: int(resolver.Port),
 		IP:   net.ParseIP(resolver.Host),
 	})
@@ -88,7 +88,7 @@ func (resolver *Resolver) Listen() error {
 		for {
 
 			buffer := make([]byte, 512)
-			length, remote, err := connection.ReadFromUDP(buffer)
+			length, remote, err := listener.ReadFromUDP(buffer)
 
 			if err == nil {
 
@@ -101,7 +101,7 @@ func (resolver *Resolver) Listen() error {
 
 					if response.Type == "response" {
 						resolver.Cache.Write(response)
-						connection.WriteTo(response.Bytes(), remote)
+						listener.WriteTo(response.Bytes(), remote)
 					}
 
 				}

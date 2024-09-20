@@ -1,9 +1,9 @@
-package dns
+package tunnel
 
 import "tholian-endpoint/protocols/dns"
 import "strings"
 
-func toDNSPayload(response dns.Packet) []byte {
+func DecodePayload(response *dns.Packet) []byte {
 
 	var payload []byte
 
@@ -19,7 +19,7 @@ func toDNSPayload(response dns.Packet) []byte {
 
 				// bytes.0-123.124.example.com
 				if len(tmp) > 3 && tmp[0] == "bytes" && strings.Contains(tmp[1], "-") {
-					payload = append(payload, record.Data)
+					payload = append(payload, record.Data...)
 				}
 
 			}

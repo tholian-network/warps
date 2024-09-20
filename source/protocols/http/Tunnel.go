@@ -3,6 +3,7 @@ package http
 import "tholian-endpoint/protocols/dns"
 import "tholian-endpoint/protocols/http"
 import "tholian-endpoint/types"
+import http_tunnel "tholian-warps/protocols/http/tunnel"
 import net_url "net/url"
 import "strconv"
 
@@ -30,36 +31,41 @@ func (tunnel *Tunnel) ResolvePacket(query dns.Packet) dns.Packet {
 
 	if err == nil {
 
-		payload := query.Bytes()
-
 		tunnel_request := http.NewPacket()
-		tunnel_request.SetMethod(http.MethodPost)
 		tunnel_request.SetURL(*url)
-		tunnel_request.SetHeader("Accept", "application/dns-message")
-		tunnel_request.SetHeader("Content-Type", "application/dns-message")
-		tunnel_request.SetHeader("Content-Length", strconv.Itoa(len(payload)))
-		tunnel_request.SetPayload(payload)
+
+		http_tunnel.EncodePayload(&tunnel_request, query.Bytes())
 
 		tunnel_response := http.RequestPacket(tunnel_request)
 
-		if tunnel_response.Type == "response" && tunnel_response.Status == http.StatusOK && tunnel_response.GetHeader("Content-Type") == "application/dns-message" {
+		if http_tunnel.IsResolveResponse(&tunnel_response) {
 
-			tunnel_response.Decode()
-
-			tmp := dns.Parse(tunnel_response.Payload)
-
-			if tmp.Type == "response" {
-				response = tmp
-			} else {
-				response = EmptyDNSResponse(query)
-			}
+			response = dns.Parse(http_tunnel.DecodePayload(&tunnel_response))
 
 		} else {
-			response = EmptyDNSResponse(query)
+
+			response = dns.NewPacket()
+			response.SetType("response")
+			response.SetIdentifier(query.Identifier)
+			response.SetResponseCode(dns.ResponseCodeNonExistDomain)
+
+			for q := 0; q < len(query.Questions); q++ {
+				response.AddQuestion(query.Questions[q])
+			}
+
 		}
 
 	} else {
-		response = EmptyDNSResponse(query)
+
+		response = dns.NewPacket()
+		response.SetType("response")
+		response.SetIdentifier(query.Identifier)
+		response.SetResponseCode(dns.ResponseCodeNonExistDomain)
+
+		for q := 0; q < len(query.Questions); q++ {
+			response.AddQuestion(query.Questions[q])
+		}
+
 	}
 
 	return response
@@ -82,10 +88,17 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 	tunnel_response := http.RequestPacket(tunnel_request)
 
 	if tunnel_response.Type == "response" {
+
 		response = tunnel_response
 		response.Decode()
+
 	} else {
-		response = EmptyHTTPResponse(request)
+
+		response = http.NewPacket()
+		response.SetURL(*request.URL)
+		response.SetStatus(http.StatusNotFound)
+		response.SetPayload([]byte{})
+
 	}
 
 	return response

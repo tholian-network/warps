@@ -95,10 +95,13 @@ tholian-warps;
 ```
 
 
-# Features
+# WIP
 
 These are the pluggable transport protocols that have been implemented
 so far already:
+
+- [ ] `structs/WebCache.Read(http.Packet) http.Packet`
+- [ ] `structs/WebCache.Write(http.Packet)`
 
 - [ ] [compressors/css](/source/compressors/css)
 - [ ] [compressors/html](/source/compressors/html)
@@ -106,8 +109,8 @@ so far already:
 - [ ] [compressors/jpeg](/source/compressors/jpeg)
 - [ ] [compressors/png](/source/compressors/png)
 
-- [ ] [protocols/dns](/source/protocols/dns)
-- [x] [protocols/http](/source/protocols/http)
+- [x] [protocols/dns](/source/protocols/dns) (DNS Exfil)
+- [x] [protocols/http](/source/protocols/http) (HTTP Smuggling)
 - [ ] [protocols/https](/source/protocols/https)
 - [ ] [protocols/icmp](/source/protocols/icmp)
 - [ ] [protocols/ssh](/source/protocols/ssh)

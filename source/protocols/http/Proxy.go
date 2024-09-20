@@ -4,8 +4,8 @@ import "tholian-endpoint/protocols/dns"
 import "tholian-endpoint/protocols/http"
 import "tholian-warps/console"
 import "tholian-warps/interfaces"
+import http_tunnel "tholian-warps/protocols/http/tunnel"
 import utils_net "tholian-warps/utils/net"
-import "encoding/base64"
 import "net"
 import "strings"
 
@@ -65,95 +65,48 @@ func (proxy *Proxy) RequestPacket(request http.Packet) http.Packet {
 
 	var response http.Packet
 
-	if proxy.Cache != nil && proxy.Cache.Exists(request) {
+	if http_tunnel.IsResolveRequest(&request) {
 
-		response = proxy.Cache.Read(request)
+		dns_query := dns.Parse(http_tunnel.DecodePayload(&request))
 
-	} else if proxy.Tunnel != nil {
+		if dns_query.Type == "query" {
 
-		response = proxy.Tunnel.RequestPacket(request)
+			dns_response := proxy.ResolvePacket(dns_query)
 
-	} else {
-
-		if request.GetHeader("Content-Type") == "application/dns-message" {
-
-			dns_request_payload := []byte{}
-
-			if request.Method == http.MethodGet {
-
-				tmp1 := request.URL.Query()
-
-				if tmp1.Get("dns") != "" {
-
-					tmp2, err2 := base64.URLEncoding.DecodeString(tmp1.Get("dns"))
-
-					if err2 == nil {
-						dns_request_payload = tmp2
-					}
-
-				}
-
-			} else if request.Method == http.MethodPost {
-
-				request.Decode()
-				dns_request_payload = request.Payload
-
-			}
-
-			dns_request := dns.Parse(dns_request_payload)
-
-			if dns_request.Type == "query" {
-
-				var dns_response dns.Packet
-				var resolved bool = false
-
-				if proxy.Resolver != nil {
-
-					tmp := proxy.Resolver.ResolvePacket(dns_request)
-
-					if tmp.Type == "response" {
-						dns_response = tmp
-						resolved = true
-					} else {
-						dns_response = EmptyDNSResponse(dns_request)
-					}
-
-				} else {
-
-					tmp := dns.ResolvePacket(dns_request)
-
-					if tmp.Type == "response" {
-						dns_response = tmp
-						resolved = true
-					} else {
-						dns_response = EmptyDNSResponse(dns_request)
-					}
-
-				}
+			if dns_response.Type == "response" {
 
 				response = http.NewPacket()
 				response.SetURL(*request.URL)
 
-				if resolved == true {
-					response.SetStatus(http.StatusOK)
-				} else {
-					response.SetStatus(http.StatusNotFound)
-				}
-
-				response.SetHeader("Content-Type", "application/dns-message")
-				response.SetPayload(dns_response.Bytes())
+				http_tunnel.EncodePayload(&response, dns_response.Bytes())
 
 			} else {
 
-				dns_response := EmptyDNSResponse(dns_request)
-
 				response = http.NewPacket()
 				response.SetURL(*request.URL)
-				response.SetStatus(http.StatusNotFound)
-				response.SetHeader("Content-Type", "application/dns-message")
-				response.SetPayload(dns_response.Bytes())
+
+				http_tunnel.EncodeError(&dns_query, &response, http.StatusNotFound)
 
 			}
+
+		} else {
+
+			response = http.NewPacket()
+			response.SetURL(*request.URL)
+
+			http_tunnel.EncodeError(&dns_query, &response, http.StatusNotFound)
+
+		}
+
+	} else {
+
+		if proxy.Cache != nil && proxy.Cache.Exists(request) {
+
+			response = proxy.Cache.Read(request)
+
+		} else if proxy.Tunnel != nil {
+
+			response = proxy.Tunnel.RequestPacket(request)
 
 		} else {
 
@@ -173,13 +126,25 @@ func (proxy *Proxy) RequestPacket(request http.Packet) http.Packet {
 				tmp := http.RequestPacket(request)
 
 				if tmp.Type == "response" {
+
 					response = tmp
+
 				} else {
-					response = EmptyHTTPResponse(request)
+
+					response = http.NewPacket()
+					response.SetURL(*request.URL)
+					response.SetStatus(http.StatusNotFound)
+					response.SetPayload([]byte{})
+
 				}
 
 			} else {
-				response = EmptyHTTPResponse(request)
+
+				response = http.NewPacket()
+				response.SetURL(*request.URL)
+				response.SetStatus(http.StatusRequestTimeout)
+				response.SetPayload([]byte{})
+
 			}
 
 		}
