@@ -2,68 +2,10 @@ package structs
 
 import "tholian-endpoint/protocols/http"
 import utils_url "tholian-warps/utils/net/url"
+import utils_http "tholian-warps/utils/protocols/http"
+import "encoding/json"
 import "os"
-import net_url "net/url"
-import "sort"
 import "strings"
-
-func resolveWebCacheFile(url *net_url.URL) string {
-
-	result := ""
-	tmp := strings.Split(url.Path, "/")
-
-	if len(tmp) > 1 {
-
-		if tmp[0] == "" && strings.Contains(tmp[len(tmp)-1], ".") {
-			result = url.Host + "/" + url.Path[1:]
-		} else if tmp[0] == "" && strings.TrimSpace(tmp[len(tmp)-1]) != "" {
-			result = url.Host + "/" + url.Path[1:]
-		} else {
-			result = url.Host + "/" + url.Path[1:len(url.Path)-1] + "/index.html"
-		}
-
-	} else {
-
-		result = url.Host + "/index.html"
-
-	}
-
-	query := url.Query()
-
-	if len(query) > 0 {
-
-		parameters := []string{}
-
-		for key := range query {
-
-			val := query.Get(key)
-
-			if !utils_url.IsXSSParameter(key, val) && !utils_url.IsTrackingParameter(url.Host, key, val) {
-				parameters = append(parameters, key)
-			}
-
-		}
-
-		sort.Strings(parameters)
-
-		for p := 0; p < len(parameters); p++ {
-
-			key := parameters[p]
-			val := query.Get(key)
-
-			if p == 0 {
-				result += "?" + key + "=" + val
-			} else {
-				result += "&" + key + "=" + val
-			}
-
-		}
-
-	}
-
-	return result
-
-}
 
 type WebCache struct {
 	Folder string `json:"folder"`
@@ -103,7 +45,7 @@ func (cache *WebCache) Exists(request http.Packet) bool {
 
 	if request.Type == "request" && request.URL != nil {
 
-		resolved := resolveWebCacheFile(request.URL)
+		resolved := utils_url.ResolveWebCache(request.URL)
 
 		if resolved != "" {
 
@@ -132,20 +74,39 @@ func (cache *WebCache) Read(request http.Packet) http.Packet {
 
 	if request.Type == "request" && request.URL != nil {
 
-		resolved := resolveWebCacheFile(request.URL)
+		resolved := utils_url.ResolveWebCache(request.URL)
 
 		if resolved != "" {
 
-			// buffer1, err1 := os.ReadFile(cache.Folder + "/headers/" + resolved)
-			// buffer2, err2 := os.ReadFile(cache.Folder + "/payload/" + resolved)
+			response = http.NewPacket()
+			response.SetURL(*request.URL)
+			response.SetStatus(http.StatusOK)
 
-			// TODO: Find out a way to serialize headers from http Packets
+			buffer1, err1 := os.ReadFile(cache.Folder + "/headers/" + resolved)
+
+			if err1 == nil {
+
+				headers := make(map[string]string)
+				err12 := json.Unmarshal(buffer1, &headers)
+
+				if err12 == nil {
+
+					for key, val := range headers {
+						response.SetHeader(key, val)
+					}
+
+				}
+
+			}
+
+			buffer2, err2 := os.ReadFile(cache.Folder + "/payload/" + resolved)
+
+			if err2 == nil {
+				response.SetPayload(buffer2)
+			}
 
 		}
 
-		// TODO: Transfer-Encoding
-		// TODO: Content-Encoding
-		// TODO: Store as plaintext!
 	}
 
 	return response
@@ -157,9 +118,39 @@ func (cache *WebCache) Write(response http.Packet) bool {
 	var result bool = false
 
 	if response.Type == "response" && response.URL != nil {
-		// TODO: Transfer-Encoding
-		// TODO: Content-Encoding
-		// TODO: Store as plaintext!
+
+		resolved := utils_url.ResolveWebCache(response.URL)
+
+		if resolved != "" {
+
+			response.Decode()
+
+			headers := make(map[string]string)
+			payload := response.Payload
+
+			for key, val := range response.Headers {
+
+				if !utils_http.IsFilteredHeader(key) {
+					headers[key] = val
+				}
+
+			}
+
+			buffer_headers, err0 := json.MarshalIndent(headers, "", "\t")
+
+			if err0 == nil {
+
+				err1 := os.WriteFile(cache.Folder + "/headers/" + resolved, buffer_headers, 0666)
+				err2 := os.WriteFile(cache.Folder + "/payload/" + resolved, payload, 0666)
+
+				if err1 == nil && err2 == nil {
+					result = true
+				}
+
+			}
+
+		}
+
 	}
 
 	return result
