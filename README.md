@@ -95,21 +95,23 @@ tholian-warps;
 ```
 
 
+# Data Compressors
+
+These are the data compressors that have been implemented:
+
+- [ ] [compressors/text/css](/source/compressors/text/css)
+- [ ] [compressors/text/html](/source/compressors/text/html)
+- [ ] [compressors/text/js](/source/compressors/text/js)
+- [ ] [compressors/image/jpeg](/source/compressors/image/jpeg)
+- [ ] [compressors/image/png](/source/compressors/image/png)
+
+
 # Network Protocols
 
-These are the pluggable transport protocols that have been implemented:
+These are the transport protocols that have been implemented:
 
-- [ ] `structs/WebCache.Read(http.Packet) http.Packet`
-- [ ] `structs/WebCache.Write(http.Packet)`
-
-- [ ] [compressors/css](/source/compressors/css)
-- [ ] [compressors/html](/source/compressors/html)
-- [ ] [compressors/js](/source/compressors/js)
-- [ ] [compressors/jpeg](/source/compressors/jpeg)
-- [ ] [compressors/png](/source/compressors/png)
-
-- [x] [protocols/dns](/source/protocols/dns)
-- [x] [protocols/http](/source/protocols/http)
+- [x] [protocols/dns](/source/protocols/dns) implements DNS Exfiltration
+- [x] [protocols/http](/source/protocols/http) implements HTTP Smuggling and DNS over HTTP/S
 - [ ] [protocols/https](/source/protocols/https)
 - [ ] [protocols/icmp](/source/protocols/icmp)
 - [ ] [protocols/ssh](/source/protocols/ssh)
