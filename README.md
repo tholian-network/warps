@@ -15,12 +15,15 @@ build a reliable mesh network that's based on a peer-to-peer architecture.
 
 # Network Architecture
 
-1. A Warps `tunnel` instance needs a `gateway` or `peer` to access the internet.
-2. All Warps instances use a local [DomainCache](./source/structs/DomainCache.go) and [WebCache](./source/structs/WebCache.go).
-3. All Warps instances can modify network protocols and rotate encryption keys on-demand.
-4. A Warps `gateway` or `peer` uses `optimizers` which optimize the web asset file sizes.
-5. A Warps `gateway` or `peer` uses `DNS over TLS` to resolve relayed DNS queries.
-6. A Warps `peer` instance can tunnel through another Warps `gateway` or `peer` instance.
+1. A Warps `tunnel` tunnels network traffic through a `peer` or `gateway` to access the internet.
+2. A Warps `tunnel` uses the initial configured network protocol.
+3. A Warps `peer` tunnels network traffic through other `peer` or `gateway` instances.
+4. A Warps `peer` rotates the used network protocols.
+
+5. All Warps `peer` or `gateway` instances use `optimizers` to reduce web asset file sizes.
+6. All Warps `peer` or `gateway` instances use `DNS over TLS` to resolve relayed DNS queries.
+7. All Warps instances use a local [DomainCache](./source/structs/DomainCache.go) and [WebCache](./source/structs/WebCache.go).
+8. All Warps instances can rotate encryption keys and can scatter network traffic on-demand.
 
 
 ## How to use Tunnels and Gateways
