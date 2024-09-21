@@ -1,9 +1,11 @@
-package url
+package tunnel
 
 import "tholian-endpoint/types"
 import net_url "net/url"
+import "slices"
+import "strings"
 
-func ToHost(url *net_url.URL) string {
+func ToRecordName(url *net_url.URL) string {
 
 	var result string
 
@@ -12,7 +14,12 @@ func ToHost(url *net_url.URL) string {
 		tmp_ip, tmp_port := types.ParseIPv6AndPort(url.Host)
 
 		if tmp_ip != nil && tmp_port != 0 {
-			result = "[" + tmp_ip.String() + "]"
+
+			tmp := strings.Split(strings.Join(strings.Split(tmp_ip.String(), ":"), ""), "")
+			slices.Reverse(tmp)
+
+			result = strings.Join(tmp, ".") + ".ip6.arpa"
+
 		}
 
 	} else if types.IsIPv6(url.Host) {
@@ -20,7 +27,12 @@ func ToHost(url *net_url.URL) string {
 		tmp_ip := types.ParseIPv6(url.Host)
 
 		if tmp_ip != nil {
-			result = "[" + tmp_ip.String() + "]"
+
+			tmp := strings.Split(strings.Join(strings.Split(tmp_ip.String(), ":"), ""), "")
+			slices.Reverse(tmp)
+
+			result = strings.Join(tmp, ".") + ".ip6.arpa"
+
 		}
 
 	} else if types.IsIPv4AndPort(url.Host) {
@@ -28,7 +40,12 @@ func ToHost(url *net_url.URL) string {
 		tmp_ip, tmp_port := types.ParseIPv4AndPort(url.Host)
 
 		if tmp_ip != nil && tmp_port != 0 {
-			result = tmp_ip.String()
+
+			tmp := strings.Split(tmp_ip.String(), ".")
+			slices.Reverse(tmp)
+
+			return strings.Join(tmp, ".") + ".in-addr.arpa"
+
 		}
 
 	} else if types.IsIPv4(url.Host) {
@@ -36,7 +53,12 @@ func ToHost(url *net_url.URL) string {
 		tmp_ip := types.ParseIPv4(url.Host)
 
 		if tmp_ip != nil {
-			result = tmp_ip.String()
+
+			tmp := strings.Split(tmp_ip.String(), ".")
+			slices.Reverse(tmp)
+
+			return strings.Join(tmp, ".") + ".in-addr.arpa"
+
 		}
 
 	} else if types.IsDomainAndPort(url.Host) {

@@ -5,7 +5,6 @@ import "tholian-endpoint/protocols/http"
 import "tholian-warps/interfaces"
 import dns_tunnel "tholian-warps/protocols/dns/tunnel"
 import "net"
-import net_url "net/url"
 import "strings"
 
 type Proxy struct {
@@ -52,14 +51,12 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 
 		request_url, request_from, request_to, _ := dns_tunnel.DecodeContentRange(&query)
 
-		if request_url != "" {
+		if request_url != nil {
 
 			if request_from == 0 && request_to == -1 {
 
-				url, _ := net_url.Parse(request_url)
-
 				http_request := http.NewPacket()
-				http_request.SetURL(*url)
+				http_request.SetURL(*request_url)
 				http_request.SetMethod(http.MethodGet)
 				http_request.SetHeader("Range", "bytes=0-")
 
@@ -92,10 +89,8 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 
 			} else if request_from > 0 && request_to > request_from {
 
-				url, _ := net_url.Parse(request_url)
-
 				http_request := http.NewPacket()
-				http_request.SetURL(*url)
+				http_request.SetURL(*request_url)
 				http_request.SetMethod(http.MethodGet)
 				http_request.SetHeader("Range", "bytes=0-")
 

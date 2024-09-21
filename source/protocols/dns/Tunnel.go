@@ -65,7 +65,7 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 	tunnel_request.SetType("query")
 
 	// Range: bytes=0-
-	dns_tunnel.EncodeContentRange(&tunnel_request, request.URL.String(), 0, -1, -1)
+	dns_tunnel.EncodeContentRange(&tunnel_request, request.URL, 0, -1, -1)
 
 	tunnel_request.SetServer(types.Server{
 		Domain:    tunnel.Host,
@@ -104,7 +104,7 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 					frame_request.SetType("query")
 
 					// Range: bytes=<from>-<to>
-					dns_tunnel.EncodeContentRange(&tunnel_request, request.URL.String(), frame_from, frame_to, -1)
+					dns_tunnel.EncodeContentRange(&tunnel_request, request.URL, frame_from, frame_to, -1)
 
 					frame_request.SetServer(types.Server{
 						Domain:    tunnel.Host,

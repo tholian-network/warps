@@ -1,12 +1,13 @@
 package tunnel
 
 import "tholian-endpoint/protocols/dns"
+import net_url "net/url"
 import "strconv"
 import "strings"
 
-func DecodeContentRange(packet *dns.Packet) (string, int, int, int) {
+func DecodeContentRange(packet *dns.Packet) (*net_url.URL, int, int, int) {
 
-	var url  string = ""
+	var url  *net_url.URL = nil
 	var from int = -1
 	var to   int = -1
 	var size int = -1
@@ -34,9 +35,15 @@ func DecodeContentRange(packet *dns.Packet) (string, int, int, int) {
 						num_to,   err_to   := strconv.ParseInt(tmp_to, 10, 64)
 
 						if err_from == nil && err_to == nil {
-							url  = record.ToURL()
-							from = int(num_from)
-							to   = int(num_to)
+
+							tmp, err_url := net_url.Parse(record.ToURL())
+
+							if err_url == nil {
+								url  = tmp
+								from = int(num_from)
+								to   = int(num_to)
+							}
+
 						}
 
 						if tmp_size != "x" {
@@ -54,8 +61,14 @@ func DecodeContentRange(packet *dns.Packet) (string, int, int, int) {
 						num_from, err_from := strconv.ParseInt(tmp_from, 10, 64)
 
 						if err_from == nil {
-							url  = record.ToURL()
-							from = int(num_from)
+
+							tmp, err_url := net_url.Parse(record.ToURL())
+
+							if err_url == nil {
+								url  = tmp
+								from = int(num_from)
+							}
+
 						}
 
 					}
