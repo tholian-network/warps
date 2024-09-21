@@ -72,10 +72,10 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 					response.SetIdentifier(query.Identifier)
 					response.SetResponseCode(dns.ResponseCodeNoError)
 
-					if len(http_response.Payload) >= 1024 {
-						dns_tunnel.EncodeContentRange(&response, request_url, 0, 1023, len(http_response.Payload))
+					if len(http_response.Payload) >= 512 {
+						dns_tunnel.EncodeContentRange(&response, request_url, 0, 511, len(http_response.Payload))
 						dns_tunnel.EncodeHeaders(&response, http_response.Headers)
-						dns_tunnel.EncodePayload(&response, http_response.Payload[0:1024])
+						dns_tunnel.EncodePayload(&response, http_response.Payload[0:512])
 					} else {
 						dns_tunnel.EncodeContentRange(&response, request_url, 0, len(http_response.Payload)-1, len(http_response.Payload))
 						dns_tunnel.EncodeHeaders(&response, http_response.Headers)
@@ -288,7 +288,11 @@ func (proxy *Proxy) Listen() error {
 						response := proxy.ResolvePacket(packet)
 
 						if response.Type == "response" {
-							listener.WriteTo(response.Bytes(), remote)
+
+							if proxy.listener != nil {
+								proxy.listener.WriteTo(response.Bytes(), remote)
+							}
+
 						}
 
 					}(remote, packet)

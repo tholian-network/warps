@@ -88,7 +88,9 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 
 			_, payload_from, payload_to, payload_size := dns_tunnel.DecodeContentRange(&first_response)
 
-			if payload_from == 0 && payload_to != 0 && payload_size > 1024 {
+			// fmt.Println("Tunnel: content-range", payload_from, "-", payload_to, "/", payload_size)
+
+			if payload_from == 0 && payload_to != 0 && payload_size > 512 {
 
 				// TODO: HTTP response SetHeader("Content-Range", "bytes 0-123/1234") header
 
@@ -103,11 +105,17 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 					frame_from := len(payload)
 					frame_to := len(payload) + frame_size
 
+					if frame_to > payload_size - 1 {
+						frame_to = payload_size - 1
+					}
+
+					// fmt.Println("Tunnel: frame request", frame_from, "-", frame_to)
+
 					frame_request := dns.NewPacket()
 					frame_request.SetType("query")
 
 					// Range: bytes=<from>-<to>
-					dns_tunnel.EncodeContentRange(&tunnel_request, request.URL, frame_from, frame_to, -1)
+					dns_tunnel.EncodeContentRange(&frame_request, request.URL, frame_from, frame_to, -1)
 
 					frame_request.SetServer(types.Server{
 						Domain:    tunnel.Host,
@@ -118,7 +126,10 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 					})
 
 					frame_response := dns.ResolvePacket(frame_request)
+
 					_, frame_response_from, frame_response_to, frame_response_size := dns_tunnel.DecodeContentRange(&frame_response)
+
+					// fmt.Println("Tunnel: frame response", frame_response_from, "-", frame_response_to, "/", frame_response_size)
 
 					if frame_from == frame_response_from && frame_to == frame_response_to && payload_size == frame_response_size {
 						payload = append(payload, dns_tunnel.DecodePayload(&frame_response)...)
