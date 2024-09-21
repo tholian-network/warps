@@ -95,10 +95,9 @@ tholian-warps;
 ```
 
 
-# WIP
+# Network Protocols
 
-These are the pluggable transport protocols that have been implemented
-so far already:
+These are the pluggable transport protocols that have been implemented:
 
 - [ ] `structs/WebCache.Read(http.Packet) http.Packet`
 - [ ] `structs/WebCache.Write(http.Packet)`
@@ -109,12 +108,31 @@ so far already:
 - [ ] [compressors/jpeg](/source/compressors/jpeg)
 - [ ] [compressors/png](/source/compressors/png)
 
-- [x] [protocols/dns](/source/protocols/dns) (DNS Exfil)
-- [x] [protocols/http](/source/protocols/http) (HTTP Smuggling)
+- [x] [protocols/dns](/source/protocols/dns)
+- [x] [protocols/http](/source/protocols/http)
 - [ ] [protocols/https](/source/protocols/https)
 - [ ] [protocols/icmp](/source/protocols/icmp)
 - [ ] [protocols/ssh](/source/protocols/ssh)
 - [ ] [protocols/socks](/source/protocols/socks)
+
+
+# Test Coverage
+
+These are the `go test` files that have been implemented:
+
+- [x] [structs/DomainCache](/source/structs/DomainCache_test.go)
+- [x] [structs/WebCache](/source/structs/WebCache_test.go)
+- [ ] [utils/net/url/IsTrackingParameter](/source/utils/net/url/IsTrackingParameter_test.go)
+- [ ] [utils/net/url/IsXSSParameter](/source/utils/net/url/IsXSSParameter_test.go)
+- [x] [utils/net/url/ResolveWebCache](/source/utils/net/url/ResolveWebCache_test.go)
+- [ ] [utils/net/url/ToHostAndPort](/source/utils/net/url/ToHostAndPort_test.go)
+- [ ] [utils/net/url/ToHost](/source/utils/net/url/ToHost_test.go)
+- [ ] [utils/protocols/http/IsFilteredHeader](/source/protocols/http/IsFilteredHeader_test.go)
+- [ ] [protocols/dns/Resolver](/source/protocols/dns/Resolver_test.go)
+- [ ] [protocols/dns/Proxy](/source/protocols/dns/Proxy_test.go)
+- [ ] [protocols/dns/Tunnel](/source/protocols/dns/Tunnel_test.go)
+- [ ] [protocols/http/Proxy](/source/protocols/http/Proxy_test.go)
+- [ ] [protocols/http/Tunnel](/source/protocols/http/Tunnel_test.go)
 
 
 # License

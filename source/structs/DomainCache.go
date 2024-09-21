@@ -7,6 +7,52 @@ import "os"
 import "path/filepath"
 import "strings"
 
+func countQuestionTypes(questions []dns.Question) int {
+
+	var result int = 0
+
+	counted := make(map[dns.Type]bool)
+
+	for q := 0; q < len(questions); q++ {
+
+		_, ok := counted[questions[q].Type]
+
+		if ok == true {
+			// Do Nothing
+		} else {
+			counted[questions[q].Type] = true
+			result++
+		}
+
+	}
+
+	return result
+
+}
+
+func countRecordTypes(records []dns.Record) int {
+
+	var result int = 0
+
+	counted := make(map[dns.Type]bool)
+
+	for r := 0; r < len(records); r++ {
+
+		_, ok := counted[records[r].Type]
+
+		if ok == true {
+			// Do Nothing
+		} else {
+			counted[records[r].Type] = true
+			result++
+		}
+
+	}
+
+	return result
+
+}
+
 func readDomainRecords(file string) []dns.Record {
 
 	var records []dns.Record
@@ -151,7 +197,6 @@ func (cache *DomainCache) Read(query dns.Packet) dns.Packet {
 
 		if query.Flags.RecursionDesired == true {
 			response.Flags.RecursionAvailable = true
-			response.Flags.RecursionDesired = true
 		}
 
 		for q := 0; q < len(query.Questions); q++ {
@@ -175,6 +220,16 @@ func (cache *DomainCache) Read(query dns.Packet) dns.Packet {
 
 			}
 
+		}
+
+		length_answers := countRecordTypes(response.Answers)
+
+		if countQuestionTypes(query.Questions) == length_answers {
+			response.SetResponseCode(dns.ResponseCodeNoError)
+		} else if length_answers > 0 {
+			response.SetResponseCode(dns.ResponseCodeNoError)
+		} else if length_answers == 0 {
+			response.SetResponseCode(dns.ResponseCodeNonExistDomain)
 		}
 
 	}
@@ -228,6 +283,7 @@ func (cache *DomainCache) Write(response dns.Packet) bool {
 
 				if changed == true {
 					writeDomainRecords(cache.Folder + "/" + resolved, records)
+					result = true
 				}
 
 			}

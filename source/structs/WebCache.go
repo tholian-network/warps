@@ -5,6 +5,7 @@ import utils_url "tholian-warps/utils/net/url"
 import utils_http "tholian-warps/utils/protocols/http"
 import "encoding/json"
 import "os"
+import "path"
 import "strings"
 
 type WebCache struct {
@@ -78,13 +79,14 @@ func (cache *WebCache) Read(request http.Packet) http.Packet {
 
 		if resolved != "" {
 
-			response = http.NewPacket()
-			response.SetURL(*request.URL)
-			response.SetStatus(http.StatusOK)
-
 			buffer1, err1 := os.ReadFile(cache.Folder + "/headers/" + resolved)
+			buffer2, err2 := os.ReadFile(cache.Folder + "/payload/" + resolved)
 
-			if err1 == nil {
+			if err1 == nil && err2 == nil {
+
+				response = http.NewPacket()
+				response.SetURL(*request.URL)
+				response.SetStatus(http.StatusOK)
 
 				headers := make(map[string]string)
 				err12 := json.Unmarshal(buffer1, &headers)
@@ -97,15 +99,29 @@ func (cache *WebCache) Read(request http.Packet) http.Packet {
 
 				}
 
-			}
-
-			buffer2, err2 := os.ReadFile(cache.Folder + "/payload/" + resolved)
-
-			if err2 == nil {
 				response.SetPayload(buffer2)
+
+			} else {
+
+				response = http.NewPacket()
+				response.SetURL(*request.URL)
+				response.SetStatus(http.StatusNotFound)
+
 			}
+
+		} else {
+
+			response = http.NewPacket()
+			response.SetURL(*request.URL)
+			response.SetStatus(http.StatusNotFound)
 
 		}
+
+	} else {
+
+		response = http.NewPacket()
+		response.SetURL(*request.URL)
+		response.SetStatus(http.StatusInternalServerError)
 
 	}
 
@@ -140,11 +156,39 @@ func (cache *WebCache) Write(response http.Packet) bool {
 
 			if err0 == nil {
 
-				err1 := os.WriteFile(cache.Folder + "/headers/" + resolved, buffer_headers, 0666)
-				err2 := os.WriteFile(cache.Folder + "/payload/" + resolved, payload, 0666)
+				folder := path.Dir(resolved)
+				_, err1 := os.Stat(cache.Folder + "/headers/" + folder)
+				_, err2 := os.Stat(cache.Folder + "/payload/" + folder)
+
+				if err1 != nil {
+
+					err12 := os.MkdirAll(cache.Folder + "/headers/" + folder, 0755)
+
+					if err12 == nil {
+						_, err1 = os.Stat(cache.Folder + "/headers/" + folder)
+					}
+
+				}
+
+				if err2 != nil {
+
+					err22 := os.MkdirAll(cache.Folder + "/payload/" + folder, 0755)
+
+					if err22 == nil {
+						_, err2 = os.Stat(cache.Folder + "/payload/" + folder)
+					}
+
+				}
 
 				if err1 == nil && err2 == nil {
-					result = true
+
+					err12 := os.WriteFile(cache.Folder + "/headers/" + resolved, buffer_headers, 0666)
+					err22 := os.WriteFile(cache.Folder + "/payload/" + resolved, payload, 0666)
+
+					if err12 == nil && err22 == nil {
+						result = true
+					}
+
 				}
 
 			}
