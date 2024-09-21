@@ -29,7 +29,7 @@ The easiest way to use Warps is with running a Warps `gateway` on your own VPS t
 and a locally running Warps `tunnel`.
 
 As a defaulted network protocol, it is best to use `dns`, as that usually works to bypass typical firewall setups.
-Alternative supported network protocols are documented in [Protocols.go](./source/types/Protocols.go).
+Alternative supported network protocols are documented further down in this document.
 
 ![network-architecture.png](https://github.com/tholian-network/warps/blob/master/assets/network-chart.png?raw=true)
 
@@ -110,12 +110,12 @@ These are the data compressors that have been implemented:
 
 These are the transport protocols that have been implemented:
 
-- [x] [protocols/dns](/source/protocols/dns) implements DNS Exfiltration
-- [x] [protocols/http](/source/protocols/http) implements HTTP Smuggling and DNS over HTTP/S
-- [ ] [protocols/https](/source/protocols/https)
-- [ ] [protocols/icmp](/source/protocols/icmp)
-- [ ] [protocols/ssh](/source/protocols/ssh)
-- [ ] [protocols/socks](/source/protocols/socks)
+- [x] `dns` or [protocols/dns](/source/protocols/dns) implements DNS Exfiltration
+- [x] `http` or [protocols/http](/source/protocols/http) implements HTTP Smuggling and DNS over HTTP
+- [ ] `https` or [protocols/https](/source/protocols/https) implements HTTPS Smuggling and DNS over HTTPS
+- [ ] `icmp` or [protocols/icmp](/source/protocols/icmp) implements ICMP Knocking and DNS over ICMP
+- [ ] `ssh` or [protocols/ssh](/source/protocols/ssh) implements SSH Tunneling and DNS over SSH
+- [ ] `socks` or [protocols/socks](/source/protocols/socks) implements SOCKS Routing (e.g. for TOR/I2P usage)
 
 
 # Test Coverage
