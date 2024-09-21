@@ -11,8 +11,8 @@ func Tunnel(folder string, host string, port uint16, protocol types.Protocol) {
 
 	console.Group("actions/Tunnel")
 
-	web_cache := structs.NewWebCache(folder + "/proxy")
-	dns_cache := structs.NewDomainCache(folder + "/resolver")
+	web_cache := structs.NewProxyCache(folder + "/proxy")
+	dns_cache := structs.NewResolverCache(folder + "/resolver")
 
 	resolver := dns.NewResolver("localhost", 8053, &dns_cache)
 
@@ -25,12 +25,11 @@ func Tunnel(folder string, host string, port uint16, protocol types.Protocol) {
 
 	if protocol == types.ProtocolDNS {
 
-		// TODO
-		// tunnel := dns.NewTunnel(host, port)
+		tunnel := dns.NewTunnel(host, port)
 
-		// resolver.SetTunnel(&tunnel)
-		// http_proxy.SetTunnel(&tunnel)
-		// https_proxy.SetTunnel(&tunnel)
+		resolver.SetTunnel(&tunnel)
+		http_proxy.SetTunnel(&tunnel)
+		// TODO: https_proxy.SetTunnel(&tunnel)
 
 	} else if protocol == types.ProtocolHTTP {
 
@@ -38,7 +37,7 @@ func Tunnel(folder string, host string, port uint16, protocol types.Protocol) {
 
 		resolver.SetTunnel(&tunnel)
 		http_proxy.SetTunnel(&tunnel)
-		// https_proxy.SetTunnel(&tunnel)
+		// TODO: https_proxy.SetTunnel(&tunnel)
 
 	} else if protocol == types.ProtocolHTTPS {
 

@@ -1,56 +1,29 @@
 package dns
 
 import "tholian-endpoint/protocols/dns"
-import "tholian-endpoint/protocols/http"
+import "tholian-warps/protocols/test"
 import "testing"
 
-type SpyResolverCache struct {
-	read    bool
-	written bool
-}
-
-func (cache *SpyResolverCache) Exists(_ dns.Packet) bool {
-	return true
-}
-
-func (cache *SpyResolverCache) Read(_ dns.Packet) dns.Packet {
-	var response dns.Packet
-	cache.read = true
-	return response
-}
-
-func (cache *SpyResolverCache) Write(_ dns.Packet) bool {
-	cache.written = true
-	return true
-}
-
-type SpyTunnel struct {
-	resolved  bool
-	requested bool
-}
-
-func (tunnel *SpyTunnel) ResolvePacket(_ dns.Packet) dns.Packet {
-	var response dns.Packet
-	tunnel.resolved = true
-	return response
-}
-
-func (tunnel *SpyTunnel) RequestPacket(_ http.Packet) http.Packet {
-	var response http.Packet
-	tunnel.requested = true
-	return response
-}
-
-func TestProxy(t *testing.T) {
+func TestResolver(t *testing.T) {
 
 	t.Run("Resolver with ResolverCache", func(t *testing.T) {
 
-		spycache := SpyResolverCache{}
-		resolver := NewResolver("localhost", 13337, &spycache)
+		record := dns.NewRecord("example.com", dns.TypeA)
+		record.SetIPv4("1.3.3.7")
+		response := dns.NewPacket()
+		response.SetType("response")
+		response.AddQuestion(dns.NewQuestion("example.com", dns.TypeA))
 
-		resolver.ResolvePacket(dns.Packet{})
+		cache := test.NewSpyResolverCache(true, &response, true)
+		resolver := NewResolver("localhost", 13337, &cache)
 
-		if spycache.read == false {
+		query := dns.NewPacket()
+		query.SetType("query")
+		query.AddQuestion(dns.NewQuestion("example.com", dns.TypeA))
+
+		resolver.ResolvePacket(query)
+
+		if cache.ResolvedRead == "A:example.com" {
 			t.Errorf("Expected cache to read HTTP Packet")
 		}
 
@@ -58,13 +31,17 @@ func TestProxy(t *testing.T) {
 
 	t.Run("Resolver with Tunnel", func(t *testing.T) {
 
-		spytunnel := SpyTunnel{}
+		tunnel := test.NewSpyTunnel(false)
 		resolver := NewResolver("localhost", 13337, nil)
-		resolver.SetTunnel(&spytunnel)
+		resolver.SetTunnel(&tunnel)
 
-		resolver.ResolvePacket(dns.Packet{})
+		query := dns.NewPacket()
+		query.SetType("query")
+		query.AddQuestion(dns.NewQuestion("example.com", dns.TypeA))
 
-		if spytunnel.resolved == false {
+		resolver.ResolvePacket(query)
+
+		if tunnel.Resolved == "A:example.com" {
 			t.Errorf("Expected tunnel to resolve DNS Packet")
 		}
 

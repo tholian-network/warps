@@ -4,7 +4,7 @@ import net_url "net/url"
 import "sort"
 import "strings"
 
-func ResolveWebCache(url *net_url.URL) string {
+func ResolveCache(url *net_url.URL) string {
 
 	path := url.Path
 	result := ""

@@ -4,6 +4,7 @@ import "tholian-endpoint/protocols/dns"
 import "tholian-endpoint/protocols/http"
 import "tholian-endpoint/types"
 import dns_tunnel "tholian-warps/protocols/dns/tunnel"
+import "strconv"
 
 type Tunnel struct {
 	Host string `json:"host"`
@@ -89,6 +90,8 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 
 			if payload_from == 0 && payload_to != 0 && payload_size > 1024 {
 
+				// TODO: HTTP response SetHeader("Content-Range", "bytes 0-123/1234") header
+
 				// Some network routes only support 1232 bytes DNS packet size
 				// The default payload frame size is 1024 bytes, but in case
 				// the network route supports bigger frame sizes
@@ -130,11 +133,13 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 
 					response = http.NewPacket()
 					response.SetURL(*request.URL)
+					response.SetStatus(http.StatusOK)
 
 					for key, val := range headers {
 						response.SetHeader(key, val)
 					}
 
+					response.SetHeader("Content-Range", "bytes " + strconv.Itoa(0) + "-" + strconv.Itoa(len(payload) - 1) + "/" + strconv.Itoa(len(payload)))
 					response.SetPayload(payload)
 
 				} else {
@@ -145,6 +150,19 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 					response.SetPayload([]byte{})
 
 				}
+
+			} else if payload_from == 0 && payload_to != 0 && payload_size > 0 {
+
+				response = http.NewPacket()
+				response.SetURL(*request.URL)
+				response.SetStatus(http.StatusOK)
+
+				for key, val := range headers {
+					response.SetHeader(key, val)
+				}
+
+				response.SetHeader("Content-Range", "bytes " + strconv.Itoa(payload_from) + "-" + strconv.Itoa(payload_to) + "/" + strconv.Itoa(payload_size))
+				response.SetPayload(payload)
 
 			} else {
 

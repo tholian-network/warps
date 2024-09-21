@@ -8,13 +8,13 @@ import "os"
 import "path"
 import "strings"
 
-type WebCache struct {
+type ProxyCache struct {
 	Folder string `json:"folder"`
 }
 
-func NewWebCache(folder string) WebCache {
+func NewProxyCache(folder string) ProxyCache {
 
-	var cache WebCache
+	var cache ProxyCache
 
 	if strings.HasSuffix(folder, "/") {
 		folder = folder[0:len(folder)-1]
@@ -40,13 +40,13 @@ func NewWebCache(folder string) WebCache {
 
 }
 
-func (cache *WebCache) Exists(request http.Packet) bool {
+func (cache *ProxyCache) Exists(request http.Packet) bool {
 
 	var result bool = false
 
 	if request.Type == "request" && request.URL != nil {
 
-		resolved := utils_url.ResolveWebCache(request.URL)
+		resolved := utils_url.ResolveCache(request.URL)
 
 		if resolved != "" {
 
@@ -69,13 +69,13 @@ func (cache *WebCache) Exists(request http.Packet) bool {
 
 }
 
-func (cache *WebCache) Read(request http.Packet) http.Packet {
+func (cache *ProxyCache) Read(request http.Packet) http.Packet {
 
 	var response http.Packet
 
 	if request.Type == "request" && request.URL != nil {
 
-		resolved := utils_url.ResolveWebCache(request.URL)
+		resolved := utils_url.ResolveCache(request.URL)
 
 		if resolved != "" {
 
@@ -129,13 +129,13 @@ func (cache *WebCache) Read(request http.Packet) http.Packet {
 
 }
 
-func (cache *WebCache) Write(response http.Packet) bool {
+func (cache *ProxyCache) Write(response http.Packet) bool {
 
 	var result bool = false
 
 	if response.Type == "response" && response.URL != nil {
 
-		resolved := utils_url.ResolveWebCache(response.URL)
+		resolved := utils_url.ResolveCache(response.URL)
 
 		if resolved != "" {
 

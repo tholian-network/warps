@@ -24,39 +24,6 @@ func (cache *SpyProxyCache) Write(_ http.Packet) bool {
 	return true
 }
 
-type SpyResolver struct {
-	resolved bool
-}
-
-func (resolver *SpyResolver) Resolve(_ string) dns.Packet {
-	var response dns.Packet
-	resolver.resolved = true
-	return response
-}
-
-func (resolver *SpyResolver) ResolvePacket(_ dns.Packet) dns.Packet {
-	var response dns.Packet
-	resolver.resolved = true
-	return response
-}
-
-type SpyTunnel struct {
-	resolved  bool
-	requested bool
-}
-
-func (tunnel *SpyTunnel) ResolvePacket(_ dns.Packet) dns.Packet {
-	var response dns.Packet
-	tunnel.resolved = true
-	return response
-}
-
-func (tunnel *SpyTunnel) RequestPacket(_ http.Packet) http.Packet {
-	var response http.Packet
-	tunnel.requested = true
-	return response
-}
-
 func TestProxy(t *testing.T) {
 
 	t.Run("Proxy with ProxyCache", func(t *testing.T) {

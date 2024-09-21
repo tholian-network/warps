@@ -116,13 +116,13 @@ func writeDomainRecords(file string, records []dns.Record) bool {
 
 }
 
-type DomainCache struct {
+type ResolverCache struct {
 	Folder string `json:"folder"`
 }
 
-func NewDomainCache(folder string) DomainCache {
+func NewResolverCache(folder string) ResolverCache {
 
-	var cache DomainCache
+	var cache ResolverCache
 
 	if strings.HasSuffix(folder, "/") {
 		folder = folder[0:len(folder)-1]
@@ -148,7 +148,7 @@ func NewDomainCache(folder string) DomainCache {
 
 }
 
-func (cache *DomainCache) Exists(query dns.Packet) bool {
+func (cache *ResolverCache) Exists(query dns.Packet) bool {
 
 	var result bool = false
 
@@ -184,7 +184,7 @@ func (cache *DomainCache) Exists(query dns.Packet) bool {
 
 }
 
-func (cache *DomainCache) Read(query dns.Packet) dns.Packet {
+func (cache *ResolverCache) Read(query dns.Packet) dns.Packet {
 
 	var response dns.Packet
 
@@ -238,7 +238,7 @@ func (cache *DomainCache) Read(query dns.Packet) dns.Packet {
 
 }
 
-func (cache *DomainCache) Write(response dns.Packet) bool {
+func (cache *ResolverCache) Write(response dns.Packet) bool {
 
 	var result bool = false
 

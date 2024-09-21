@@ -230,30 +230,36 @@ func (proxy *Proxy) Listen() error {
 
 					} else if packet.Method.String() != "" {
 
-						response := proxy.RequestPacket(packet)
+						go func(connection net.Conn, packet *http.Packet) {
 
-						if response.Type == "response" {
+							response := proxy.RequestPacket(*packet)
 
-							proxy.Cache.Write(response)
-							connection.Write(response.Bytes())
+							if response.Type == "response" {
 
-							connection.Close()
+								proxy.Cache.Write(response)
+								connection.Write(response.Bytes())
 
-						} else {
+								connection.Close()
 
-							response := http.NewPacket()
-							response.SetStatus(http.StatusInternalServerError)
+							} else {
 
-							connection.Write(response.Bytes())
-							connection.Close()
+								response := http.NewPacket()
+								response.SetStatus(http.StatusInternalServerError)
 
-						}
+								connection.Write(response.Bytes())
+								connection.Close()
 
+							}
+
+						}(connection, &packet)
+
+					} else {
+						defer connection.Close()
 					}
 
+				} else {
+					defer connection.Close()
 				}
-
-				defer connection.Close()
 
 			}
 

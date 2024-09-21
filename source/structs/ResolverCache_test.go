@@ -5,18 +5,18 @@ import "bytes"
 import "os"
 import "testing"
 
-func TestDomainCache(t *testing.T) {
+func TestResolverCache(t *testing.T) {
 
 	t.Run("Exists with single question", func(t *testing.T) {
 
-		tmp, _ := os.MkdirTemp("", "tholian-warps-domaincache-*")
-		domaincache := NewDomainCache(tmp)
+		tmp, _ := os.MkdirTemp("", "tholian-warps-resolvercache-*")
+		cache := NewResolverCache(tmp)
 
 		query := dns.NewPacket()
 		query.SetType("query")
 		query.AddQuestion(dns.NewQuestion("example.com", dns.TypeA))
 
-		result1 := domaincache.Exists(query)
+		result1 := cache.Exists(query)
 
 		if result1 != false {
 			t.Errorf("Expected '%t' but got '%t'", false, result1)
@@ -31,13 +31,13 @@ func TestDomainCache(t *testing.T) {
 		response.AddQuestion(dns.NewQuestion("example.com", dns.TypeA))
 		response.AddAnswer(record)
 
-		result2 := domaincache.Write(response)
+		result2 := cache.Write(response)
 
 		if result2 != true {
 			t.Errorf("Expected '%t' but got '%t'", true, result2)
 		}
 
-		result3 := domaincache.Exists(query)
+		result3 := cache.Exists(query)
 
 		if result3 != true {
 			t.Errorf("Expected '%t' but got '%t'", true, result3)
@@ -49,15 +49,15 @@ func TestDomainCache(t *testing.T) {
 
 	t.Run("Exists with multiple questions", func(t *testing.T) {
 
-		tmp, _ := os.MkdirTemp("", "tholian-warps-domaincache-*")
-		domaincache := NewDomainCache(tmp)
+		tmp, _ := os.MkdirTemp("", "tholian-warps-resolvercache-*")
+		cache := NewResolverCache(tmp)
 
 		query := dns.NewPacket()
 		query.SetType("query")
 		query.AddQuestion(dns.NewQuestion("example.com", dns.TypeA))
 		query.AddQuestion(dns.NewQuestion("example.com", dns.TypeAAAA))
 
-		result1 := domaincache.Exists(query)
+		result1 := cache.Exists(query)
 
 		if result1 != false {
 			t.Errorf("Expected '%t' but got '%t'", false, result1)
@@ -71,13 +71,13 @@ func TestDomainCache(t *testing.T) {
 		response1.AddQuestion(dns.NewQuestion("example.com", dns.TypeA))
 		response1.AddAnswer(record1)
 
-		result2 := domaincache.Write(response1)
+		result2 := cache.Write(response1)
 
 		if result2 != true {
 			t.Errorf("Expected '%t' but got '%t'", true, result2)
 		}
 
-		result3 := domaincache.Exists(query)
+		result3 := cache.Exists(query)
 
 		if result3 != false {
 			t.Errorf("Expected '%t' but got '%t'", false, result3)
@@ -95,13 +95,13 @@ func TestDomainCache(t *testing.T) {
 		response2.AddAnswer(record21)
 		response2.AddAnswer(record22)
 
-		result4 := domaincache.Write(response2)
+		result4 := cache.Write(response2)
 
 		if result4 != true {
 			t.Errorf("Expected '%t' but got '%t'", true, result4)
 		}
 
-		result5 := domaincache.Exists(query)
+		result5 := cache.Exists(query)
 
 		if result5 != true {
 			t.Errorf("Expected '%t' but got '%t'", true, result5)
@@ -113,14 +113,14 @@ func TestDomainCache(t *testing.T) {
 
 	t.Run("Read/Write with single question", func(t *testing.T) {
 
-		tmp, _ := os.MkdirTemp("", "tholian-warps-domaincache-*")
-		domaincache := NewDomainCache(tmp)
+		tmp, _ := os.MkdirTemp("", "tholian-warps-resolvercache-*")
+		cache := NewResolverCache(tmp)
 
 		query := dns.NewPacket()
 		query.SetType("query")
 		query.AddQuestion(dns.NewQuestion("example.com", dns.TypeA))
 
-		result1 := domaincache.Read(query)
+		result1 := cache.Read(query)
 
 		if result1.Codes.Response != dns.ResponseCodeNonExistDomain {
 			t.Errorf("Expected '%s' but got '%s'", dns.ResponseCode(dns.ResponseCodeNonExistDomain).String(), result1.Codes.Response.String())
@@ -138,18 +138,17 @@ func TestDomainCache(t *testing.T) {
 		response1.AddQuestion(dns.NewQuestion("example.com", dns.TypeA))
 		response1.AddAnswer(record1)
 
-		result2 := domaincache.Write(response1)
+		result2 := cache.Write(response1)
 
 		if result2 != true {
 			t.Errorf("Expected '%t' but got '%t'", true, result2)
 		}
 
-		result3 := domaincache.Read(query)
+		result3 := cache.Read(query)
 
 		if result3.Codes.Response != dns.ResponseCodeNoError {
 			t.Errorf("Expected '%s' but got '%s'", dns.ResponseCode(dns.ResponseCodeNoError).String(), result3.Codes.Response.String())
 		}
-
 
 		if len(result3.Answers) == 1 {
 
@@ -172,15 +171,15 @@ func TestDomainCache(t *testing.T) {
 
 	t.Run("Read/Write with multiple questions", func(t *testing.T) {
 
-		tmp, _ := os.MkdirTemp("", "tholian-warps-domaincache-*")
-		domaincache := NewDomainCache(tmp)
+		tmp, _ := os.MkdirTemp("", "tholian-warps-resolvercache-*")
+		cache := NewResolverCache(tmp)
 
 		query := dns.NewPacket()
 		query.SetType("query")
 		query.AddQuestion(dns.NewQuestion("example.com", dns.TypeA))
 		query.AddQuestion(dns.NewQuestion("example.com", dns.TypeAAAA))
 
-		result1 := domaincache.Read(query)
+		result1 := cache.Read(query)
 
 		if result1.Codes.Response != dns.ResponseCodeNonExistDomain {
 			t.Errorf("Expected '%s' but got '%s'", dns.ResponseCode(dns.ResponseCodeNonExistDomain).String(), result1.Codes.Response.String())
@@ -198,13 +197,13 @@ func TestDomainCache(t *testing.T) {
 		response1.AddQuestion(dns.NewQuestion("example.com", dns.TypeA))
 		response1.AddAnswer(record1)
 
-		result2 := domaincache.Write(response1)
+		result2 := cache.Write(response1)
 
 		if result2 != true {
 			t.Errorf("Expected '%t' but got '%t'", true, result2)
 		}
 
-		result3 := domaincache.Read(query)
+		result3 := cache.Read(query)
 
 		if result3.Codes.Response != dns.ResponseCodeNoError {
 			t.Errorf("Expected '%s' but got '%s'", dns.ResponseCode(dns.ResponseCodeNoError).String(), result3.Codes.Response.String())
@@ -222,13 +221,13 @@ func TestDomainCache(t *testing.T) {
 		response2.AddQuestion(dns.NewQuestion("example.com", dns.TypeAAAA))
 		response2.AddAnswer(record2)
 
-		result4 := domaincache.Write(response2)
+		result4 := cache.Write(response2)
 
 		if result4 != true {
 			t.Errorf("Expected '%t' but got '%t'", true, result4)
 		}
 
-		result5 := domaincache.Read(query)
+		result5 := cache.Read(query)
 
 		if result5.Codes.Response != dns.ResponseCodeNoError {
 			t.Errorf("Expected '%s' but got '%s'", dns.ResponseCode(dns.ResponseCodeNoError).String(), result5.Codes.Response.String())

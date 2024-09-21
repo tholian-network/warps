@@ -10,8 +10,8 @@ func Peer(folder string, host string) {
 
 	console.Group("actions/Peer")
 
-	web_cache := structs.NewWebCache(folder + "/proxy")
-	dns_cache := structs.NewDomainCache(folder + "/resolver")
+	web_cache := structs.NewProxyCache(folder + "/proxy")
+	dns_cache := structs.NewResolverCache(folder + "/resolver")
 
 	resolver := dns.NewResolver("localhost", 8053, &dns_cache)
 

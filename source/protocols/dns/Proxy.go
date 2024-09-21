@@ -13,6 +13,7 @@ type Proxy struct {
 	Cache    interfaces.ProxyCache `json:"cache"`
 	Tunnel   interfaces.Tunnel     `json:"tunnel"`
 	Resolver interfaces.Resolver   `json:"resolver"`
+	listener *net.UDPConn
 }
 
 func NewProxy(host string, port uint16, cache interfaces.ProxyCache) Proxy {
@@ -71,9 +72,15 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 					response.SetIdentifier(query.Identifier)
 					response.SetResponseCode(dns.ResponseCodeNoError)
 
-					dns_tunnel.EncodeContentRange(&response, request_url, 0, 1023, len(http_response.Payload))
-					dns_tunnel.EncodeHeaders(&response, http_response.Headers)
-					dns_tunnel.EncodePayload(&response, http_response.Payload[0:1024])
+					if len(http_response.Payload) >= 1024 {
+						dns_tunnel.EncodeContentRange(&response, request_url, 0, 1023, len(http_response.Payload))
+						dns_tunnel.EncodeHeaders(&response, http_response.Headers)
+						dns_tunnel.EncodePayload(&response, http_response.Payload[0:1024])
+					} else {
+						dns_tunnel.EncodeContentRange(&response, request_url, 0, len(http_response.Payload)-1, len(http_response.Payload))
+						dns_tunnel.EncodeHeaders(&response, http_response.Headers)
+						dns_tunnel.EncodePayload(&response, http_response.Payload)
+					}
 
 				} else {
 
@@ -100,13 +107,27 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 
 					http_response.Decode()
 
-					response = dns.NewPacket()
-					response.SetType("response")
-					response.SetIdentifier(query.Identifier)
-					response.SetResponseCode(dns.ResponseCodeNoError)
+					if len(http_response.Payload) >= request_to+1 {
 
-					dns_tunnel.EncodeContentRange(&response, request_url, request_from, request_to, len(http_response.Payload))
-					dns_tunnel.EncodePayload(&response, http_response.Payload[request_from:request_to+1])
+						response = dns.NewPacket()
+						response.SetType("response")
+						response.SetIdentifier(query.Identifier)
+						response.SetResponseCode(dns.ResponseCodeNoError)
+
+						dns_tunnel.EncodeContentRange(&response, request_url, request_from, request_to, len(http_response.Payload))
+						dns_tunnel.EncodePayload(&response, http_response.Payload[request_from:request_to+1])
+
+					} else {
+
+						response = dns.NewPacket()
+						response.SetType("response")
+						response.SetIdentifier(query.Identifier)
+						response.SetResponseCode(dns.ResponseCodeNonExistDomain)
+
+						dns_tunnel.EncodeContentRange(&response, request_url, 0, 0, 0)
+						dns_tunnel.EncodePayload(&response, []byte{})
+
+					}
 
 				} else {
 
@@ -225,6 +246,18 @@ func (proxy *Proxy) SetTunnel(value interfaces.Tunnel) {
 	proxy.Tunnel = value
 }
 
+func (proxy *Proxy) Destroy() error {
+
+	var err error = nil
+
+	if proxy.listener != nil {
+		err = proxy.listener.Close()
+	}
+
+	return err
+
+}
+
 func (proxy *Proxy) Listen() error {
 
 	var err error = nil
@@ -235,6 +268,8 @@ func (proxy *Proxy) Listen() error {
 	})
 
 	if err1 == nil {
+
+		proxy.listener = listener
 
 		for {
 
@@ -248,11 +283,15 @@ func (proxy *Proxy) Listen() error {
 
 				if packet.Type == "query" && len(packet.Questions) > 0 {
 
-					response := proxy.ResolvePacket(packet)
+					go func(remote net.Addr, packet dns.Packet) {
 
-					if response.Type == "response" {
-						listener.WriteTo(response.Bytes(), remote)
-					}
+						response := proxy.ResolvePacket(packet)
+
+						if response.Type == "response" {
+							listener.WriteTo(response.Bytes(), remote)
+						}
+
+					}(remote, packet)
 
 				}
 

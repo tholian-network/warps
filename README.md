@@ -22,7 +22,7 @@ build a reliable mesh network that's based on a peer-to-peer architecture.
 
 5. All Warps `peer` or `gateway` instances use `optimizers` to reduce web asset file sizes.
 6. All Warps `peer` or `gateway` instances use `DNS over TLS` to resolve relayed DNS queries.
-7. All Warps instances use a local [DomainCache](./source/structs/DomainCache.go) and [WebCache](./source/structs/WebCache.go).
+7. All Warps instances use a local [ProxyCache](./source/structs/ProxyCache.go) and [ResolverCache](./source/structs/ResolverCache.go).
 8. All Warps instances can rotate encryption keys and can scatter network traffic on-demand.
 
 
@@ -119,17 +119,18 @@ These are the transport protocols that have been implemented:
 - [ ] `icmp` or [protocols/icmp](/source/protocols/icmp) implements ICMP Knocking and DNS over ICMP
 - [ ] `ssh` or [protocols/ssh](/source/protocols/ssh) implements SSH Tunneling and DNS over SSH
 - [ ] `socks` or [protocols/socks](/source/protocols/socks) implements SOCKS Routing (e.g. for TOR/I2P usage)
+- [x] [protocols/test](/source/protocols/test) implements the `Spy` testing data structures
 
 
 # Test Coverage
 
 These are the `go test` files that have been implemented:
 
-- [x] [structs/DomainCache](/source/structs/DomainCache_test.go)
-- [x] [structs/WebCache](/source/structs/WebCache_test.go)
+- [x] [structs/ProxyCache](/source/structs/ProxyCache_test.go)
+- [x] [structs/ResolverCache](/source/structs/ResolverCache_test.go)
 - [ ] [utils/net/url/IsTrackingParameter](/source/utils/net/url/IsTrackingParameter_test.go)
 - [ ] [utils/net/url/IsXSSParameter](/source/utils/net/url/IsXSSParameter_test.go)
-- [x] [utils/net/url/ResolveWebCache](/source/utils/net/url/ResolveWebCache_test.go)
+- [x] [utils/net/url/ResolveCache](/source/utils/net/url/ResolveCache_test.go)
 - [x] [utils/net/url/ToHostAndPort](/source/utils/net/url/ToHostAndPort_test.go)
 - [x] [utils/net/url/ToHost](/source/utils/net/url/ToHost_test.go)
 - [ ] [utils/protocols/http/IsFilteredHeader](/source/protocols/http/IsFilteredHeader_test.go)
