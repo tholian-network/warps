@@ -23,8 +23,12 @@ func TestResolver(t *testing.T) {
 
 		resolver.ResolvePacket(query)
 
-		if cache.ResolvedRead == "A:example.com" {
-			t.Errorf("Expected cache to read HTTP Packet")
+		if cache.ResolvedExists != "A:example.com" {
+			t.Errorf("Expected SpyResolverCache to Exists '%s' but got '%s'", "A:example.com", cache.ResolvedExists)
+		}
+
+		if cache.ResolvedRead != "A:example.com" {
+			t.Errorf("Expected SpyResolverCache to Read '%s' but got '%s'", "A:example.com", cache.ResolvedRead)
 		}
 
 	})
@@ -41,8 +45,56 @@ func TestResolver(t *testing.T) {
 
 		resolver.ResolvePacket(query)
 
-		if tunnel.Resolved == "A:example.com" {
-			t.Errorf("Expected tunnel to resolve DNS Packet")
+		if tunnel.Resolved != "A:example.com" {
+			t.Errorf("Expected SpyTunnel to resolve '%s' but got '%s'", "A:example.com", tunnel.Resolved)
+		}
+
+	})
+
+	t.Run("Resolver with DNS Type A Payload", func(t *testing.T) {
+
+		resolver := NewResolver("localhost", 13337, nil)
+
+		query := dns.NewPacket()
+		query.SetType("query")
+		query.AddQuestion(dns.NewQuestion("example.com", dns.TypeA))
+
+		response := resolver.ResolvePacket(query)
+
+		if len(query.Questions) == len(response.Questions) && len(response.Answers) > 0 {
+
+			record := response.Answers[0]
+
+			if record.Type != dns.TypeA {
+				t.Errorf("Expected DNS response record type to be '%s' but got '%s'", dns.TypeA.String(), dns.Type(record.Type).String())
+			}
+
+		} else {
+			t.Errorf("Expected DNS response questions to be '%d' but got '%d'", len(query.Questions), len(response.Questions))
+		}
+
+	})
+
+	t.Run("Resolver with DNS Type AAAA Payload", func(t *testing.T) {
+
+		resolver := NewResolver("localhost", 13337, nil)
+
+		query := dns.NewPacket()
+		query.SetType("query")
+		query.AddQuestion(dns.NewQuestion("example.com", dns.TypeAAAA))
+
+		response := resolver.ResolvePacket(query)
+
+		if len(query.Questions) == len(response.Questions) && len(response.Answers) > 0 {
+
+			record := response.Answers[0]
+
+			if record.Type != dns.TypeAAAA {
+				t.Errorf("Expected DNS response record type to be '%s' but got '%s'", dns.TypeAAAA.String(), dns.Type(record.Type).String())
+			}
+
+		} else {
+			t.Errorf("Expected DNS response questions to be '%d' but got '%d'", len(query.Questions), len(response.Questions))
 		}
 
 	})

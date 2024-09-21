@@ -138,7 +138,7 @@ These are the `go test` files that have been implemented:
 - [x] [protocols/dns/Proxy](/source/protocols/dns/Proxy_test.go)
 - [ ] [protocols/dns/Tunnel](/source/protocols/dns/Tunnel_test.go)
 - [x] [protocols/dns/tunnel/ToRecordName](/source/protocols/dns/tunnel/ToRecordName_test.go)
-- [ ] [protocols/http/Proxy](/source/protocols/http/Proxy_test.go)
+- [x] [protocols/http/Proxy](/source/protocols/http/Proxy_test.go)
 - [ ] [protocols/http/Tunnel](/source/protocols/http/Tunnel_test.go)
 
 

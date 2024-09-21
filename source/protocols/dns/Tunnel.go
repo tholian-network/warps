@@ -92,8 +92,6 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 
 			if payload_from == 0 && payload_to != 0 && payload_size > 512 {
 
-				// TODO: HTTP response SetHeader("Content-Range", "bytes 0-123/1234") header
-
 				// Some network routes only support 1232 bytes DNS packet size
 				// The default payload frame size is 1024 bytes, but in case
 				// the network route supports bigger frame sizes

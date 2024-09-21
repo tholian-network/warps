@@ -82,7 +82,7 @@ func (resolver *SpyResolver) ResolvePacket(query dns.Packet) dns.Packet {
 
 			resolved += query.Questions[q].Type.String() + ":" + query.Questions[q].Name
 
-			if q <= len(query.Questions) - 1 {
+			if q < len(query.Questions) - 1 {
 				resolved += ","
 			}
 
