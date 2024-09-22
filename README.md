@@ -37,29 +37,12 @@ Alternative supported network protocols are documented further down in this docu
 ![network-architecture.png](https://github.com/tholian-network/warps/blob/master/assets/network-chart.png?raw=true)
 
 ```bash
-# On your VPS server
-tholian-warps gateway --protocol=dns --port=1053;
+# On your VPS server (1.3.3.7)
+tholian-warps gateway "dns://0.0.0.0:1053";
 
 # On your local machine
-tholian-warps tunnel --protocol=dns --host=1.3.3.7 --port=1053;
-curl -x localhost:8080 http://google.com;
-```
-
-## How to use Peers
-
-Warps can be used peer-to-peer and discover locally and globally running Warps `gateway` instances via multicast DNS-SD.
-This mode currently needs a Warps `gateway` or `peer` instance that is known among all peers, so that keys can be exchanged.
-
-Note that a Warps `peer` instance can change network protocols on-demand, and that behavior is different from the `tunnel` mode
-which prevails the given initial network protocol.
-
-```bash
-# On your VPS server
-tholian-warps gateway --protocol=dns --port=1053;
-
-# On your local machine
-tholian-warps peer --protocol=dns --host=1.3.3.7 --port=1053; # start a local peer, and exchange public keys
-curl -x localhost:8080 http://google.com;
+tholian-warps tunnel "any" "dns://1.3.3.7:1053";
+curl -x localhost:1080 http://google.com;
 ```
 
 
@@ -69,19 +52,19 @@ Warps can be chained via multiple proxies, without a limit on how many network h
 In this example, we are routing local web traffic through 3 instances before the traffic hits the clearnet.
 
 ```bash
-# On your VPS server
-tholian-warps gateway --protocol=dns --port=1053;
+# On your first VPS server (1.3.3.7)
+tholian-warps gateway "dns://0.0.0.0:1337";
 
-# On your second VPS server
-tholian-warps peer --protocol=dns --host=1.3.3.7 --port=1053;
+# On your second VPS server (1.3.3.8)
+tholian-warps forward "http://1.3.3.8:1338" "dns://1.3.3.7:1337";
 
-# On your third VPS server
-tholian-warps peer --protocol=dns --host=1.3.3.8 --port=1053;
+# On your third VPS server (1.3.3.9)
+tholian-warps forward "dns://1.3.3.9:1339" "http://1.3.3.8:1338";
 
 # On your local machine
-# local -> 1.3.3.9 -> 1.3.3.8 -> 1.3.3.7 -> internet
-tholian-warps tunnel --protocol=dns --host=1.3.3.9 --port=1053;
-curl -x localhost:8080 http://google.com;
+# local -> dns -> 1.3.3.9 -> http -> 1.3.3.8 -> dns -> 1.3.3.7 -> * -> internet
+tholian-warps tunnel "any" "dns://1.3.3.9:1339";
+curl -x localhost:1080 http://google.com;
 ```
 
 

@@ -9,117 +9,11 @@ import "tholian-warps/protocols/socks"
 import "tholian-warps/structs"
 import "tholian-warps/utils/arguments"
 
-func Tunnel(folder string, listen *arguments.Config, tunnel *arguments.Config) {
+func Forward(folder string, listen *arguments.Config, tunnel *arguments.Config) {
 
-	console.Group("actions/Tunnel")
+	console.Group("actions/Forward")
 
-	if listen.Protocol == types.ProtocolANY {
-
-		web_cache := structs.NewProxyCache(folder + "/proxy")
-		dns_cache := structs.NewResolverCache(folder + "/resolver")
-
-		resolver := dns.NewResolver("127.0.0.1", 53535, &dns_cache)
-		dns_proxy := dns.NewProxy(listen.Host, 1053, &web_cache)
-		http_proxy := http.NewProxy(listen.Host, 1080, &web_cache)
-		https_proxy := https.NewProxy(listen.Host, 1443, &web_cache)
-		socks_proxy := socks.NewProxy(listen.Host, 1090, &web_cache)
-
-		dns_proxy.SetResolver(&resolver)
-		http_proxy.SetResolver(&resolver)
-		https_proxy.SetResolver(&resolver)
-		socks_proxy.SetResolver(&resolver)
-
-		if tunnel.Protocol == types.ProtocolDNS {
-
-			tmp := dns.NewTunnel(tunnel.Host, tunnel.Port)
-
-			dns_proxy.SetTunnel(&tmp)
-			http_proxy.SetTunnel(&tmp)
-			https_proxy.SetTunnel(&tmp)
-			socks_proxy.SetTunnel(&tmp)
-
-		} else if tunnel.Protocol == types.ProtocolHTTP {
-
-			tmp := http.NewTunnel(tunnel.Host, tunnel.Port)
-
-			dns_proxy.SetTunnel(&tmp)
-			http_proxy.SetTunnel(&tmp)
-			https_proxy.SetTunnel(&tmp)
-			socks_proxy.SetTunnel(&tmp)
-
-		} else if tunnel.Protocol == types.ProtocolHTTPS {
-
-			tmp := https.NewTunnel(tunnel.Host, tunnel.Port)
-
-			dns_proxy.SetTunnel(&tmp)
-			http_proxy.SetTunnel(&tmp)
-			https_proxy.SetTunnel(&tmp)
-			socks_proxy.SetTunnel(&tmp)
-
-		} else if tunnel.Protocol == types.ProtocolSOCKS {
-
-			tmp := socks.NewTunnel(tunnel.Host, tunnel.Port)
-
-			dns_proxy.SetTunnel(&tmp)
-			http_proxy.SetTunnel(&tmp)
-			https_proxy.SetTunnel(&tmp)
-			socks_proxy.SetTunnel(&tmp)
-
-		}
-
-		console.Log("Tunneling to " + tunnel.String())
-		console.Log("Listening on dns://" + listen.Host + ":1053")
-		console.Log("Listening on http://" + listen.Host + ":1080")
-		console.Log("Listening on https://" + listen.Host + ":1443")
-		console.Log("Listening on socks://" + listen.Host + ":1090")
-
-		go func() {
-
-			err := resolver.Listen()
-
-			if err != nil {
-				console.Error(err.Error())
-			}
-
-		}()
-
-		go func() {
-
-			err := dns_proxy.Listen()
-
-			if err != nil {
-				console.Error(err.Error())
-			}
-
-		}()
-
-		go func() {
-
-			err := http_proxy.Listen()
-
-			if err != nil {
-				console.Error(err.Error())
-			}
-
-		}()
-
-		go func() {
-
-			err := https_proxy.Listen()
-
-			if err != nil {
-				console.Error(err.Error())
-			}
-
-		}()
-
-		err := socks_proxy.Listen()
-
-		if err != nil {
-			console.Error(err.Error())
-		}
-
-	} else if listen.Protocol == types.ProtocolDNS {
+	if listen.Protocol == types.ProtocolDNS {
 
 		web_cache := structs.NewProxyCache(folder + "/proxy")
 		dns_cache := structs.NewResolverCache(folder + "/resolver")
@@ -281,7 +175,7 @@ func Tunnel(folder string, listen *arguments.Config, tunnel *arguments.Config) {
 
 	}
 
-	console.GroupEnd("actions/Tunnel")
+	console.GroupEnd("actions/Forward")
 
 }
 

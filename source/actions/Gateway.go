@@ -4,21 +4,92 @@ import "tholian-endpoint/types"
 import "tholian-warps/console"
 import "tholian-warps/protocols/dns"
 import "tholian-warps/protocols/http"
-// import "tholian-warps/protocols/https"
+import "tholian-warps/protocols/https"
+import "tholian-warps/protocols/socks"
 import "tholian-warps/structs"
-import "strconv"
+import "tholian-warps/utils/arguments"
 
-func Gateway(folder string, host string, port uint16, protocol types.Protocol) {
+func Gateway(folder string, listen *arguments.Config) {
 
 	console.Group("actions/Gateway")
 
-	web_cache := structs.NewProxyCache(folder + "/proxy")
+	if listen.Protocol == types.ProtocolANY {
 
-	if protocol == types.ProtocolDNS {
+		web_cache := structs.NewProxyCache(folder + "/proxy")
+		dns_cache := structs.NewResolverCache(folder + "/resolver")
 
-		proxy := dns.NewProxy(host, port, &web_cache)
+		resolver := dns.NewResolver("127.0.0.1", 53535, &dns_cache)
+		dns_proxy := dns.NewProxy(listen.Host, 1053, &web_cache)
+		http_proxy := http.NewProxy(listen.Host, 1080, &web_cache)
+		https_proxy := https.NewProxy(listen.Host, 1443, &web_cache)
+		socks_proxy := socks.NewProxy(listen.Host, 1090, &web_cache)
 
-		console.Log("Listening on dns://" + host + ":" + strconv.FormatUint(uint64(port), 10))
+		dns_proxy.SetResolver(&resolver)
+		http_proxy.SetResolver(&resolver)
+		https_proxy.SetResolver(&resolver)
+		socks_proxy.SetResolver(&resolver)
+
+		console.Log("Listening on dns://" + listen.Host + ":1053")
+		console.Log("Listening on http://" + listen.Host + ":1080")
+		console.Log("Listening on https://" + listen.Host + ":1443")
+		console.Log("Listening on socks://" + listen.Host + ":1090")
+
+		go func() {
+
+			err := resolver.Listen()
+
+			if err != nil {
+				console.Error(err.Error())
+			}
+
+		}()
+
+		go func() {
+
+			err := dns_proxy.Listen()
+
+			if err != nil {
+				console.Error(err.Error())
+			}
+
+		}()
+
+		go func() {
+
+			err := http_proxy.Listen()
+
+			if err != nil {
+				console.Error(err.Error())
+			}
+
+		}()
+
+		go func() {
+
+			err := https_proxy.Listen()
+
+			if err != nil {
+				console.Error(err.Error())
+			}
+
+		}()
+
+		err := socks_proxy.Listen()
+
+		if err != nil {
+			console.Error(err.Error())
+		}
+
+	} else if listen.Protocol == types.ProtocolDNS {
+
+		web_cache := structs.NewProxyCache(folder + "/proxy")
+		dns_cache := structs.NewResolverCache(folder + "/resolver")
+
+		resolver := dns.NewResolver("127.0.0.1", 53535, &dns_cache)
+		proxy := dns.NewProxy(listen.Host, listen.Port, &web_cache)
+		proxy.SetResolver(&resolver)
+
+		console.Log("Listening on " + listen.String())
 
 		err := proxy.Listen()
 
@@ -26,11 +97,16 @@ func Gateway(folder string, host string, port uint16, protocol types.Protocol) {
 			console.Error(err.Error())
 		}
 
-	} else if protocol == types.ProtocolHTTP {
+	} else if listen.Protocol == types.ProtocolHTTP {
 
-		proxy := http.NewProxy(host, port, &web_cache)
+		web_cache := structs.NewProxyCache(folder + "/proxy")
+		dns_cache := structs.NewResolverCache(folder + "/resolver")
 
-		console.Log("Listening on http://" + host + ":" + strconv.FormatUint(uint64(port), 10))
+		resolver := dns.NewResolver("127.0.0.1", 53535, &dns_cache)
+		proxy := http.NewProxy(listen.Host, listen.Port, &web_cache)
+		proxy.SetResolver(&resolver)
+
+		console.Log("Listening on " + listen.String())
 
 		err := proxy.Listen()
 
@@ -38,22 +114,43 @@ func Gateway(folder string, host string, port uint16, protocol types.Protocol) {
 			console.Error(err.Error())
 		}
 
-	} else if protocol == types.ProtocolHTTPS {
+	} else if listen.Protocol == types.ProtocolHTTPS {
 
-		// TODO
+		web_cache := structs.NewProxyCache(folder + "/proxy")
+		dns_cache := structs.NewResolverCache(folder + "/resolver")
 
-		// proxy := https.NewProxy(host, port, &web_cache)
+		resolver := dns.NewResolver("127.0.0.1", 53535, &dns_cache)
+		proxy := https.NewProxy(listen.Host, listen.Port, &web_cache)
+		proxy.SetResolver(&resolver)
 
-		// console.Log("Listening on https://" + host + ":" + strconv.FormatUint(uint64(port), 10))
+		console.Log("Listening on " + listen.String())
 
-		// err := proxy.Listen()
+		err := proxy.Listen()
 
-		// if err != nil {
-		// 	console.Error(err.Error())
-		// }
+		if err != nil {
+			console.Error(err.Error())
+		}
+
+	} else if listen.Protocol == types.ProtocolSOCKS {
+
+		web_cache := structs.NewProxyCache(folder + "/proxy")
+		dns_cache := structs.NewResolverCache(folder + "/resolver")
+
+		resolver := dns.NewResolver("127.0.0.1", 53535, &dns_cache)
+		proxy := socks.NewProxy(listen.Host, listen.Port, &web_cache)
+		proxy.SetResolver(&resolver)
+
+		console.Log("Listening on " + listen.String())
+
+		err := proxy.Listen()
+
+		if err != nil {
+			console.Error(err.Error())
+		}
 
 	}
 
 	console.GroupEnd("actions/Gateway")
 
 }
+

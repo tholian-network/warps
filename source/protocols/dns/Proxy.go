@@ -20,9 +20,7 @@ func NewProxy(host string, port uint16, cache interfaces.ProxyCache) Proxy {
 
 	var proxy Proxy
 
-	if host == "*" || host == "any" || host == "localhost" {
-		proxy.Host = "0.0.0.0"
-	} else if host == "127.0.0.1" {
+	if host == "*" || host == "any" || host == "localhost" || host == "127.0.0.1" {
 		proxy.Host = "0.0.0.0"
 	} else if strings.ToLower(host) == host {
 		proxy.Host = host
@@ -30,15 +28,8 @@ func NewProxy(host string, port uint16, cache interfaces.ProxyCache) Proxy {
 		proxy.Host = "0.0.0.0"
 	}
 
-	if port > 0 && port < 65535 {
-		proxy.Port = port
-	} else {
-		proxy.Port = 8080
-	}
-
-	if cache != nil {
-		proxy.Cache = cache
-	}
+	proxy.Port = port
+	proxy.Cache = cache
 
 	return proxy
 

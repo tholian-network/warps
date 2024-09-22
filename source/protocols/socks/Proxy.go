@@ -1,8 +1,7 @@
-package http
+package socks
 
 import "tholian-endpoint/protocols/dns"
 import "tholian-endpoint/protocols/http"
-import "tholian-warps/console"
 import "tholian-warps/interfaces"
 import http_tunnel "tholian-warps/protocols/http/tunnel"
 import utils_net "tholian-warps/utils/net"
@@ -175,78 +174,12 @@ func (proxy *Proxy) Listen() error {
 
 				if len(buffer) > 0 {
 
-					packet := http.Parse(buffer)
+					// TODO: Implement SOCKS protocol
 
-					if packet.Method == http.MethodConnect {
+					// packet := socks.Parse(buffer)
+					// console.Inspect(packet)
 
-						console.Warn("CONNECT")
-						console.Inspect(packet)
-
-						// TODO: Remove this
-						connection.Write([]byte("HTTP/1.1 401 Unauthorized\r\n\r\n"))
-						connection.Close()
-
-						// TODO: This is wrong, because CONNECT should directly connect and not delegate via TLS connection
-
-						// connection.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
-
-						// proxied_connection, err1 := net.DialTCP("tcp", nil, &net.TCPAddr{
-						// 	IP:   net.ParseIP("127.0.0.1"),
-						// 	Port: int(8443),
-						// })
-
-						// if err1 == nil {
-
-						// 	channel := make(chan error, 1)
-
-						// 	io_copy := func(read net.Conn, write net.Conn) {
-						// 		_, err := io.Copy(read, write)
-						// 		channel <- err
-						// 	}
-
-						// 	go io_copy(connection, proxied_connection)
-						// 	go io_copy(proxied_connection, connection)
-
-						// 	err1 := <-channel
-						// 	err2 := <-channel
-
-						// 	if err1 != nil || err2 != nil {
-						// 		break
-						// 	}
-
-						// 	defer connection.Close()
-						// 	defer proxied_connection.Close()
-
-						// }
-
-					} else if packet.Method.String() != "" {
-
-						go func(connection net.Conn, packet *http.Packet) {
-
-							response := proxy.RequestPacket(*packet)
-
-							if response.Type == "response" {
-
-								proxy.Cache.Write(response)
-								connection.Write(response.Bytes())
-
-								connection.Close()
-
-							} else {
-
-								response := http.NewPacket()
-								response.SetStatus(http.StatusInternalServerError)
-
-								connection.Write(response.Bytes())
-								connection.Close()
-
-							}
-
-						}(connection, &packet)
-
-					} else {
-						defer connection.Close()
-					}
+					defer connection.Close()
 
 				} else {
 					defer connection.Close()
