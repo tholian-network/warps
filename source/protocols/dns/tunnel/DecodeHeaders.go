@@ -14,7 +14,7 @@ func DecodeHeaders(response *dns.Packet) map[string]string {
 
 			record := response.Answers[a]
 
-			if record.Type == dns.TypeTXT && !strings.HasPrefix(record.Name, "headers.") {
+			if record.Type == dns.TypeTXT && strings.Contains(record.Name, ".headers.") {
 
 				tmp := make(map[string]string)
 				err := json.Unmarshal(record.Data, &tmp)

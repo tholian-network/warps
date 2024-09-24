@@ -72,8 +72,8 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 	tunnel_request := dns.NewPacket()
 	tunnel_request.SetType("query")
 
-	// Range: bytes=0-
-	dns_tunnel.EncodeContentRange(&tunnel_request, request.URL, 0, -1, -1)
+	// Domains: 0-.bytes.domain.tld and 0-.headers.domain.tld
+	dns_tunnel.EncodeFirstRequest(&tunnel_request, request.URL)
 
 	tunnel_request.SetServer(types.Server{
 		Domain:    tunnel.Host,
@@ -103,13 +103,13 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 			payload := make([]byte, 0)
 			payload = append(payload, dns_tunnel.DecodePayload(&first_response)...)
 
-			_, payload_from, payload_to, payload_size := dns_tunnel.DecodeContentRange(&first_response)
+			payload_from, payload_to, payload_size := dns_tunnel.DecodeContentRange(&first_response)
 
 			if tunnel.debug {
 				console.Log("First Response Content-Range: " + strconv.Itoa(payload_from) + "-" + strconv.Itoa(payload_to) + "/" + strconv.Itoa(payload_size))
 			}
 
-			if payload_from == 0 && payload_to != 0 && payload_size > 512 {
+			if payload_from == 0 && payload_to > 0 && payload_size > 512 {
 
 				// Some network routes only support 1232 bytes DNS packet size
 				// The default payload frame size is 1024 bytes, but in case
@@ -130,7 +130,7 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 					frame_request.SetType("query")
 
 					// Range: bytes=<from>-<to>
-					dns_tunnel.EncodeContentRange(&frame_request, request.URL, frame_from, frame_to, -1)
+					dns_tunnel.EncodeFrameRequest(&frame_request, request.URL, frame_from, frame_to)
 
 					frame_request.SetServer(types.Server{
 						Domain:    tunnel.Host,
@@ -146,7 +146,7 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 
 					frame_response := dns.ResolvePacket(frame_request)
 
-					_, frame_response_from, frame_response_to, frame_response_size := dns_tunnel.DecodeContentRange(&frame_response)
+					frame_response_from, frame_response_to, frame_response_size := dns_tunnel.DecodeContentRange(&frame_response)
 
 					if tunnel.debug {
 						console.Log("Frame Response Content-Range: " + strconv.Itoa(frame_response_from) + "-" + strconv.Itoa(frame_response_to) + "/" + strconv.Itoa(frame_response_size))
@@ -162,7 +162,6 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 				}
 
 				if range_error == false {
-
 
 					response = http.NewPacket()
 					response.SetURL(*request.URL)
@@ -190,7 +189,7 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 
 				}
 
-			} else if payload_from == 0 && payload_to != 0 && payload_size > 0 {
+			} else if payload_from == 0 && payload_to > 0 && payload_size > 0 {
 
 				response = http.NewPacket()
 				response.SetURL(*request.URL)

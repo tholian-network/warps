@@ -1,76 +1,58 @@
 package tunnel
 
 import "tholian-endpoint/protocols/dns"
-import net_url "net/url"
+import utils_http "tholian-warps/utils/protocols/http"
+import "encoding/json"
 import "strconv"
 import "strings"
 
-func DecodeContentRange(packet *dns.Packet) (*net_url.URL, int, int, int) {
+func DecodeContentRange(packet *dns.Packet) (int, int, int) {
 
-	var url  *net_url.URL = nil
 	var from int = -1
 	var to   int = -1
 	var size int = -1
 
-	if packet.Type == "query" || packet.Type == "response" {
+	if packet.Type == "request" {
 
-		for a := 0; a < len(packet.Answers); a++ {
+		headers_domain := ""
 
-			record := packet.Answers[a]
+		for q := 0; q < len(packet.Questions); q++ {
 
-			if record.Type == dns.TypeURI && strings.HasPrefix(record.Name, "bytes.") {
+			question := packet.Questions[q]
 
-				tmp := strings.Split(record.Name, ".")
+			if question.Type == dns.TypeTXT && strings.Contains(question.Name, ".headers.") {
+				headers_domain = question.Name
+				break
+			}
 
-				// bytes.0-123.124.example.com
-				if len(tmp) > 3 && tmp[0] == "bytes" && strings.Contains(tmp[1], "-") {
+		}
 
-					tmp_from := tmp[1][0:strings.Index(tmp[1], "-")]
-					tmp_to   := tmp[1][strings.Index(tmp[1], "-")+1:]
-					tmp_size := tmp[2]
+		if from == -1 && to == -1 && headers_domain != "" {
 
-					if tmp_from != "" && tmp_to != "" {
+			tmp1 := headers_domain[0:strings.Index(headers_domain, ".headers.")]
 
-						num_from, err_from := strconv.ParseInt(tmp_from, 10, 64)
-						num_to,   err_to   := strconv.ParseInt(tmp_to, 10, 64)
+			if strings.Contains(tmp1, "-") {
 
-						if err_from == nil && err_to == nil {
+				tmp2 := strings.Split(tmp1, "-")
 
-							tmp, err_url := net_url.Parse(record.ToURL())
+				if len(tmp2) == 2 && tmp2[1] != "" {
 
-							if err_url == nil {
-								url  = tmp
-								from = int(num_from)
-								to   = int(num_to)
-							}
+					// frame request: 0-511.headers.domain.tld
+					num_from, err_from := strconv.ParseInt(tmp2[0], 10, 64)
+					num_to,   err_to   := strconv.ParseInt(tmp2[1], 10, 64)
 
-						}
+					if err_from == nil && err_to == nil {
+						from = int(num_from)
+						to   = int(num_to)
+					}
 
-						if tmp_size != "x" {
+				} else if len(tmp2) == 2 {
 
-							num_size, err_size := strconv.ParseInt(tmp_size, 10, 64)
+					// first request: 0-.headers.domain.tld
+					num_from, err_from := strconv.ParseInt(tmp2[0], 10, 64)
 
-							if err_size == nil {
-								size = int(num_size)
-							}
-
-						}
-
-					} else if tmp_from != "" {
-
-						num_from, err_from := strconv.ParseInt(tmp_from, 10, 64)
-
-						if err_from == nil {
-
-							tmp, err_url := net_url.Parse(record.ToURL())
-
-							if err_url == nil {
-								url  = tmp
-								from = int(num_from)
-							}
-
-						}
-
+					if err_from == nil {
+						from = int(num_from)
 					}
 
 				}
@@ -79,8 +61,76 @@ func DecodeContentRange(packet *dns.Packet) (*net_url.URL, int, int, int) {
 
 		}
 
+	} else if packet.Type == "response" {
+
+		headers_domain := ""
+		headers := make(map[string]string)
+
+		for a := 0; a < len(packet.Answers); a++ {
+
+			record := packet.Answers[a]
+
+			if record.Type == dns.TypeTXT && strings.Contains(record.Name, ".headers.") {
+				headers_domain = record.Name
+				json.Unmarshal(record.Data, &headers)
+				break
+			}
+
+		}
+
+		content_range, ok1 := headers["Content-Range"]
+		content_length, ok2 := headers["Content-Length"]
+
+		if ok1 == true {
+			from, to, size = utils_http.ParseContentRange(content_range)
+		}
+
+		if from == -1 && to == -1 && headers_domain != "" {
+
+			tmp1 := headers_domain[0:strings.Index(headers_domain, ".headers.")]
+
+			if strings.Contains(tmp1, "-") {
+
+				tmp2 := strings.Split(tmp1, "-")
+
+				if len(tmp2) == 2 && tmp2[1] != "" {
+
+					// frame response: 0-511.headers.domain.tld
+					num_from, err_from := strconv.ParseInt(tmp2[0], 10, 64)
+					num_to,   err_to   := strconv.ParseInt(tmp2[1], 10, 64)
+
+					if err_from == nil && err_to == nil {
+						from = int(num_from)
+						to   = int(num_to)
+					}
+
+				} else if len(tmp2) == 2 {
+
+					// first response: 0-.headers.domain.tld
+					num_from, err_from := strconv.ParseInt(tmp2[0], 10, 64)
+
+					if err_from == nil {
+						from = int(num_from)
+					}
+
+				}
+
+			}
+
+		}
+
+		if size == -1 && ok2 == true {
+
+			num_length, err_length := strconv.ParseInt(content_length, 10, 64)
+
+			if err_length == nil {
+				size = int(num_length)
+			}
+
+		}
+
 	}
 
-	return url, from, to, size
+	return from, to, size
 
 }

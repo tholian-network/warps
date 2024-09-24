@@ -4,7 +4,9 @@ import "tholian-endpoint/protocols/dns"
 import "tholian-endpoint/protocols/http"
 import "tholian-warps/interfaces"
 import dns_tunnel "tholian-warps/protocols/dns/tunnel"
+import utils_http "tholian-warps/utils/protocols/http"
 import "net"
+import "strconv"
 import "strings"
 
 type Proxy struct {
@@ -41,7 +43,8 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 
 	if dns_tunnel.IsRangeRequest(&query) {
 
-		request_url, request_from, request_to, _ := dns_tunnel.DecodeContentRange(&query)
+		request_url := dns_tunnel.DecodeURL(&query)
+		request_from, request_to, _ := dns_tunnel.DecodeContentRange(&query)
 
 		if request_url != nil {
 
@@ -64,13 +67,9 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 					response.SetResponseCode(dns.ResponseCodeNoError)
 
 					if len(http_response.Payload) >= 512 {
-						dns_tunnel.EncodeContentRange(&response, request_url, 0, 511, len(http_response.Payload))
-						dns_tunnel.EncodeHeaders(&response, http_response.Headers)
-						dns_tunnel.EncodePayload(&response, http_response.Payload[0:512])
+						dns_tunnel.EncodeFirstResponse(&response, request_url, http_response.Headers, http_response.Payload)
 					} else {
-						dns_tunnel.EncodeContentRange(&response, request_url, 0, len(http_response.Payload)-1, len(http_response.Payload))
-						dns_tunnel.EncodeHeaders(&response, http_response.Headers)
-						dns_tunnel.EncodePayload(&response, http_response.Payload)
+						dns_tunnel.EncodeFirstResponse(&response, request_url, http_response.Headers, http_response.Payload)
 					}
 
 				} else {
@@ -80,8 +79,7 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 					response.SetIdentifier(query.Identifier)
 					response.SetResponseCode(dns.ResponseCodeNonExistDomain)
 
-					dns_tunnel.EncodeContentRange(&response, request_url, 0, 0, 0)
-					dns_tunnel.EncodePayload(&response, []byte{})
+					dns_tunnel.EncodeErrorResponse(&response, request_url, request_from, request_to)
 
 				}
 
@@ -90,7 +88,7 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 				http_request := http.NewPacket()
 				http_request.SetURL(*request_url)
 				http_request.SetMethod(http.MethodGet)
-				http_request.SetHeader("Range", "bytes=0-")
+				http_request.SetHeader("Range", "bytes=" + strconv.Itoa(request_from) + "-" + strconv.Itoa(request_to))
 
 				http_response := proxy.RequestPacket(http_request)
 
@@ -98,25 +96,51 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 
 					http_response.Decode()
 
-					if len(http_response.Payload) >= request_to+1 {
+					if http_response.Status == http.StatusPartialContent {
 
-						response = dns.NewPacket()
-						response.SetType("response")
-						response.SetIdentifier(query.Identifier)
-						response.SetResponseCode(dns.ResponseCodeNoError)
+						partial_from, partial_to, partial_size := utils_http.ParseContentRange(http_response.GetHeader("Content-Range"))
 
-						dns_tunnel.EncodeContentRange(&response, request_url, request_from, request_to, len(http_response.Payload))
-						dns_tunnel.EncodePayload(&response, http_response.Payload[request_from:request_to+1])
+						if partial_from == request_from && partial_to == request_to && partial_size >= request_to+1 {
 
-					} else {
+							response = dns.NewPacket()
+							response.SetType("response")
+							response.SetIdentifier(query.Identifier)
+							response.SetResponseCode(dns.ResponseCodeNoError)
 
-						response = dns.NewPacket()
-						response.SetType("response")
-						response.SetIdentifier(query.Identifier)
-						response.SetResponseCode(dns.ResponseCodeNonExistDomain)
+							dns_tunnel.EncodeFrameResponse(&response, request_url, http_response.Headers, http_response.Payload, partial_from, partial_to, partial_size)
 
-						dns_tunnel.EncodeContentRange(&response, request_url, 0, 0, 0)
-						dns_tunnel.EncodePayload(&response, []byte{})
+						} else {
+
+							response = dns.NewPacket()
+							response.SetType("response")
+							response.SetIdentifier(query.Identifier)
+							response.SetResponseCode(dns.ResponseCodeNonExistDomain)
+
+							dns_tunnel.EncodeErrorResponse(&response, request_url, request_from, request_to)
+
+						}
+
+					} else if http_response.Status == http.StatusOK {
+
+						if len(http_response.Payload) >= request_to+1 {
+
+							response = dns.NewPacket()
+							response.SetType("response")
+							response.SetIdentifier(query.Identifier)
+							response.SetResponseCode(dns.ResponseCodeNoError)
+
+							dns_tunnel.EncodeFrameResponse(&response, request_url, http_response.Headers, http_response.Payload[request_from:request_to+1], request_from, request_to, len(http_response.Payload))
+
+						} else {
+
+							response = dns.NewPacket()
+							response.SetType("response")
+							response.SetIdentifier(query.Identifier)
+							response.SetResponseCode(dns.ResponseCodeNonExistDomain)
+
+							dns_tunnel.EncodeErrorResponse(&response, request_url, request_from, request_to)
+
+						}
 
 					}
 
@@ -127,8 +151,7 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 					response.SetIdentifier(query.Identifier)
 					response.SetResponseCode(dns.ResponseCodeNonExistDomain)
 
-					dns_tunnel.EncodeContentRange(&response, request_url, 0, 0, 0)
-					dns_tunnel.EncodePayload(&response, []byte{})
+					dns_tunnel.EncodeErrorResponse(&response, request_url, request_from, request_to)
 
 				}
 
@@ -139,8 +162,7 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 				response.SetIdentifier(query.Identifier)
 				response.SetResponseCode(dns.ResponseCodeNonExistDomain)
 
-				dns_tunnel.EncodeContentRange(&response, request_url, 0, 0, 0)
-				dns_tunnel.EncodePayload(&response, []byte{})
+				dns_tunnel.EncodeErrorResponse(&response, request_url, request_from, request_to)
 
 			}
 
@@ -150,9 +172,6 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 			response.SetType("response")
 			response.SetIdentifier(query.Identifier)
 			response.SetResponseCode(dns.ResponseCodeNonExistDomain)
-
-			dns_tunnel.EncodeContentRange(&response, request_url, 0, 0, 0)
-			dns_tunnel.EncodePayload(&response, []byte{})
 
 		}
 
