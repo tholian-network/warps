@@ -2,17 +2,23 @@ package https
 
 import "tholian-endpoint/protocols/dns"
 import "tholian-endpoint/protocols/http"
+import "tholian-warps/console"
 import "tholian-warps/interfaces"
 import http_tunnel "tholian-warps/protocols/http/tunnel"
-import "errors"
+import utils_net "tholian-warps/utils/net"
+import "crypto/tls"
+import "net"
+import "strconv"
 import "strings"
 
 type Proxy struct {
-	Host     string                `json:"host"`
-	Port     uint16                `json:"port"`
-	Cache    interfaces.ProxyCache `json:"cache"`
-	Tunnel   interfaces.Tunnel     `json:"tunnel"`
-	Resolver interfaces.Resolver   `json:"resolver"`
+	Host        string                `json:"host"`
+	Port        uint16                `json:"port"`
+	Cache       interfaces.ProxyCache `json:"cache"`
+	Tunnel      interfaces.Tunnel     `json:"tunnel"`
+	Resolver    interfaces.Resolver   `json:"resolver"`
+	certificate *tls.Certificate
+	listener    net.Listener
 }
 
 func NewProxy(host string, port uint16, cache interfaces.ProxyCache) Proxy {
@@ -144,6 +150,10 @@ func (proxy *Proxy) RequestPacket(request http.Packet) http.Packet {
 
 }
 
+func (proxy *Proxy) SetCertificate(value tls.Certificate) {
+	proxy.certificate = &value
+}
+
 func (proxy *Proxy) SetResolver(value interfaces.Resolver) {
 	proxy.Resolver = value
 }
@@ -154,7 +164,82 @@ func (proxy *Proxy) SetTunnel(value interfaces.Tunnel) {
 
 func (proxy *Proxy) Listen() error {
 
-	// TODO: Not implemented yet
-	return errors.New("TODO: Not implemented yet")
+	var err error = nil
+
+	host := "0.0.0.0:" + strconv.FormatUint(uint64(proxy.Port), 10)
+
+	listener, err1 := tls.Listen("tcp", host, &tls.Config{
+		InsecureSkipVerify: false,
+		Certificates:       []tls.Certificate{*proxy.certificate},
+		MaxVersion:         tls.VersionTLS12,
+	})
+
+	if err1 == nil {
+
+		proxy.listener = listener
+
+		for {
+
+			connection, err2 := listener.Accept()
+
+			if err2 == nil {
+
+				buffer := utils_net.ReadConnection(connection)
+
+				if len(buffer) > 0 {
+
+					packet := http.Parse(buffer)
+
+					if packet.Method == http.MethodConnect {
+
+						connection.Write([]byte("HTTP/1.1 401 Unauthorized\r\n\r\n"))
+						connection.Close()
+
+					} else if packet.Method.String() != "" {
+
+						go func(connection net.Conn, packet http.Packet) {
+
+							response := proxy.RequestPacket(packet)
+
+							if response.Type == "response" {
+
+								if proxy.Cache != nil {
+									proxy.Cache.Write(response)
+								}
+
+								connection.Write(response.Bytes())
+								connection.Close()
+
+							} else {
+
+								response := http.NewPacket()
+								response.SetStatus(http.StatusInternalServerError)
+
+								connection.Write(response.Bytes())
+								connection.Close()
+
+							}
+
+						}(connection, packet)
+
+					} else {
+						defer connection.Close()
+					}
+
+				} else {
+					defer connection.Close()
+				}
+
+			} else {
+				console.Error(err2.Error())
+			}
+
+		}
+
+	} else {
+		err = err1
+	}
+
+	return err
 
 }

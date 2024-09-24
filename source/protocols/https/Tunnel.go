@@ -4,12 +4,14 @@ import "tholian-endpoint/protocols/dns"
 import "tholian-endpoint/protocols/http"
 import "tholian-endpoint/types"
 import http_tunnel "tholian-warps/protocols/http/tunnel"
+import "crypto/tls"
 import net_url "net/url"
 import "strconv"
 
 type Tunnel struct {
-	Host string `json:"host"`
-	Port uint16 `json:"port"`
+	Host        string `json:"host"`
+	Port        uint16 `json:"port"`
+	certificate *tls.Certificate
 }
 
 func NewTunnel(host string, port uint16) Tunnel {
@@ -18,6 +20,7 @@ func NewTunnel(host string, port uint16) Tunnel {
 
 	tunnel.Host = host
 	tunnel.Port = port
+	tunnel.certificate = nil
 
 	return tunnel
 
@@ -33,6 +36,10 @@ func (tunnel *Tunnel) ResolvePacket(query dns.Packet) dns.Packet {
 
 		tunnel_request := http.NewPacket()
 		tunnel_request.SetURL(*url)
+
+		if tunnel.certificate != nil {
+			tunnel_request.SetCertificate(*tunnel.certificate.Leaf)
+		}
 
 		http_tunnel.EncodePayload(&tunnel_request, query.Bytes())
 
@@ -81,9 +88,13 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 		Domain:    tunnel.Host,
 		Addresses: []string{tunnel.Host},
 		Port:      tunnel.Port,
-		Protocol:  types.ProtocolHTTP,
+		Protocol:  types.ProtocolHTTPS,
 		Schema:    "DEFAULT",
 	})
+
+	if tunnel.certificate != nil {
+		tunnel_request.SetCertificate(*tunnel.certificate.Leaf)
+	}
 
 	tunnel_response := http.RequestPacket(tunnel_request)
 
@@ -103,4 +114,8 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 
 	return response
 
+}
+
+func (tunnel *Tunnel) SetCertificate(value tls.Certificate) {
+	tunnel.certificate = &value
 }

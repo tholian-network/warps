@@ -1,6 +1,7 @@
 package actions
 
 import "tholian-endpoint/types"
+import "tholian-warps/certificates"
 import "tholian-warps/console"
 import "tholian-warps/protocols/dns"
 import "tholian-warps/protocols/http"
@@ -20,13 +21,16 @@ func Gateway(folder string, listen *arguments.Config) {
 
 		resolver := dns.NewResolver("127.0.0.1", 53535, &dns_cache)
 		dns_proxy := dns.NewProxy(listen.Host, 1053, &web_cache)
-		http_proxy := http.NewProxy(listen.Host, 1080, &web_cache)
-		https_proxy := https.NewProxy(listen.Host, 1443, &web_cache)
-		socks_proxy := socks.NewProxy(listen.Host, 1090, &web_cache)
-
 		dns_proxy.SetResolver(&resolver)
+
+		http_proxy := http.NewProxy(listen.Host, 1080, &web_cache)
 		http_proxy.SetResolver(&resolver)
+
+		https_proxy := https.NewProxy(listen.Host, 1443, &web_cache)
+		https_proxy.SetCertificate(certificates.Proxy)
 		https_proxy.SetResolver(&resolver)
+
+		socks_proxy := socks.NewProxy(listen.Host, 1090, &web_cache)
 		socks_proxy.SetResolver(&resolver)
 
 		console.Log("Listening on dns://" + listen.Host + ":1053")
@@ -121,6 +125,7 @@ func Gateway(folder string, listen *arguments.Config) {
 
 		resolver := dns.NewResolver("127.0.0.1", 53535, &dns_cache)
 		proxy := https.NewProxy(listen.Host, listen.Port, &web_cache)
+		proxy.SetCertificate(certificates.Proxy)
 		proxy.SetResolver(&resolver)
 
 		console.Log("Listening on " + listen.String())

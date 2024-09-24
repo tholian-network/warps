@@ -4,6 +4,7 @@ import "tholian-endpoint/types"
 import "tholian-warps/actions"
 import "tholian-warps/console"
 import "tholian-warps/utils/arguments"
+import net_url "net/url"
 import "os"
 import "strings"
 
@@ -14,8 +15,10 @@ func showUsage() {
 	console.Info("Adaptive Exfil Network Protocol Router")
 	console.Info("")
 
-	console.Group("Usage: tholian-warps [Action] [Listen URL]")
-	console.Log("       tholian-warps [Action] [Listen URL] [Tunnel URL]")
+	console.Group("Usage: tholian-warps [Action] [Listen URL] [Tunnel URL]")
+	console.Log("       tholian-warps tunnel  [Listen URL] [Tunnel URL]")
+	console.Log("       tholian-warps forward [Listen URL] [Tunnel URL]")
+	console.Log("       tholian-warps gateway [Listen URL]")
 	console.GroupEnd("------")
 
 	console.Log("")
@@ -123,20 +126,14 @@ func main() {
 	})
 	console.GroupEnd("")
 
-	if action == "gateway" {
+	if action == "download" {
 
-		listen := arguments.ParseConfig(listen)
+		url, err := net_url.Parse(tunnel)
+		tunnel := arguments.ParseConfig(listen)
 
-		if listen != nil {
+		if err == nil && (url.Scheme == "http" || url.Scheme == "https") {
 
-			actions.Gateway(folder, listen)
-
-		} else {
-
-			console.Error("Cannot parse Configs from provided Listen URL")
-			
-			showUsage()
-			os.Exit(1)
+			actions.Download(folder, tunnel, url)
 
 		}
 
@@ -156,6 +153,23 @@ func main() {
 
 			showUsage()
 			os.Exit(1)
+
+		} else {
+
+			console.Error("Cannot parse Configs from provided Listen URL")
+			
+			showUsage()
+			os.Exit(1)
+
+		}
+
+	} else if action == "gateway" {
+
+		listen := arguments.ParseConfig(listen)
+
+		if listen != nil {
+
+			actions.Gateway(folder, listen)
 
 		} else {
 

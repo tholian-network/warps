@@ -2,11 +2,14 @@ package socks
 
 import "tholian-endpoint/protocols/dns"
 import "tholian-endpoint/protocols/http"
+import "tholian-warps/console"
 import "tholian-warps/interfaces"
 import http_tunnel "tholian-warps/protocols/http/tunnel"
-import utils_net "tholian-warps/utils/net"
-import "net"
+// import utils_net "tholian-warps/utils/net"
+import "errors"
+// import "net"
 import "strings"
+import "time"
 
 type Proxy struct {
 	Host     string                `json:"host"`
@@ -157,41 +160,55 @@ func (proxy *Proxy) Listen() error {
 
 	var err error = nil
 
-	listener, err1 := net.ListenTCP("tcp", &net.TCPAddr{
-		Port: int(proxy.Port),
-		IP:   net.ParseIP(proxy.Host),
-	})
+	console.Error("TODO: SOCKS Proxy is not implemented yet")
+	err = errors.New("SOCKS Proxy is not implemented yet")
 
-	if err1 == nil {
+	for {
 
-		for {
+		// Do Nothing
+		time.Sleep(1 * time.Second)
 
-			connection, err2 := listener.Accept()
-
-			if err2 == nil {
-
-				buffer := utils_net.ReadConnection(connection)
-
-				if len(buffer) > 0 {
-
-					// TODO: Implement SOCKS protocol
-
-					// packet := socks.Parse(buffer)
-					// console.Inspect(packet)
-
-					defer connection.Close()
-
-				} else {
-					defer connection.Close()
-				}
-
-			}
-
+		if 1 == 2 {
+			break
 		}
 
-	} else {
-		err = err1
 	}
+
+	// listener, err1 := net.ListenTCP("tcp", &net.TCPAddr{
+	// 	Port: int(proxy.Port),
+	// 	IP:   net.ParseIP(proxy.Host),
+	// })
+
+	// if err1 == nil {
+
+	// 	for {
+
+	// 		connection, err2 := listener.Accept()
+
+	// 		if err2 == nil {
+
+	// 			buffer := utils_net.ReadConnection(connection)
+
+	// 			if len(buffer) > 0 {
+
+	// 				// TODO: Implement SOCKS protocol
+
+	// 				// packet := socks.Parse(buffer)
+	// 				// console.Inspect(packet)
+
+	// 				defer connection.Close()
+
+	// 			} else {
+	// 				defer connection.Close()
+	// 			}
+
+	// 		}
+
+	// 	}
+
+	// } else {
+	// 	err = err1
+	// }
 
 	return err
 

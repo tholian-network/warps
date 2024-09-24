@@ -243,6 +243,7 @@ func (proxy *Proxy) Destroy() error {
 
 	if proxy.listener != nil {
 		err = proxy.listener.Close()
+		proxy.listener = nil
 	}
 
 	return err

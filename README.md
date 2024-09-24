@@ -98,7 +98,7 @@ These are the transport protocols that have been implemented:
 
 - [x] `dns` or [protocols/dns](/source/protocols/dns) implements DNS Exfiltration
 - [x] `http` or [protocols/http](/source/protocols/http) implements HTTP Smuggling and DNS over HTTP
-- [ ] `https` or [protocols/https](/source/protocols/https) implements HTTPS Smuggling and DNS over HTTPS
+- [x] `https` or [protocols/https](/source/protocols/https) implements HTTPS Smuggling and DNS over HTTPS
 - [ ] `icmp` or [protocols/icmp](/source/protocols/icmp) implements ICMP Knocking and DNS over ICMP
 - [ ] `ssh` or [protocols/ssh](/source/protocols/ssh) implements SSH Tunneling and DNS over SSH
 - [ ] `socks` or [protocols/socks](/source/protocols/socks) implements SOCKS Routing (e.g. for TOR/I2P usage)

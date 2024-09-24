@@ -1,6 +1,7 @@
 package actions
 
 import "tholian-endpoint/types"
+import "tholian-warps/certificates"
 import "tholian-warps/console"
 import "tholian-warps/protocols/dns"
 import "tholian-warps/protocols/http"
@@ -35,6 +36,7 @@ func Forward(folder string, listen *arguments.Config, tunnel *arguments.Config) 
 		} else if tunnel.Protocol == types.ProtocolHTTPS {
 
 			tmp := https.NewTunnel(tunnel.Host, tunnel.Port)
+			tmp.SetCertificate(certificates.Proxy)
 			proxy.SetTunnel(&tmp)
 
 		} else if tunnel.Protocol == types.ProtocolSOCKS {
@@ -75,6 +77,7 @@ func Forward(folder string, listen *arguments.Config, tunnel *arguments.Config) 
 		} else if tunnel.Protocol == types.ProtocolHTTPS {
 
 			tmp := https.NewTunnel(tunnel.Host, tunnel.Port)
+			tmp.SetCertificate(certificates.Proxy)
 			proxy.SetTunnel(&tmp)
 
 		} else if tunnel.Protocol == types.ProtocolSOCKS {
@@ -100,6 +103,7 @@ func Forward(folder string, listen *arguments.Config, tunnel *arguments.Config) 
 
 		resolver := dns.NewResolver("127.0.0.1", 53535, &dns_cache)
 		proxy := https.NewProxy(listen.Host, listen.Port, &web_cache)
+		proxy.SetCertificate(certificates.Proxy)
 		proxy.SetResolver(&resolver)
 
 		if tunnel.Protocol == types.ProtocolDNS {
@@ -115,6 +119,7 @@ func Forward(folder string, listen *arguments.Config, tunnel *arguments.Config) 
 		} else if tunnel.Protocol == types.ProtocolHTTPS {
 
 			tmp := https.NewTunnel(tunnel.Host, tunnel.Port)
+			tmp.SetCertificate(certificates.Proxy)
 			proxy.SetTunnel(&tmp)
 
 		} else if tunnel.Protocol == types.ProtocolSOCKS {
@@ -155,6 +160,7 @@ func Forward(folder string, listen *arguments.Config, tunnel *arguments.Config) 
 		} else if tunnel.Protocol == types.ProtocolHTTPS {
 
 			tmp := https.NewTunnel(tunnel.Host, tunnel.Port)
+			tmp.SetCertificate(certificates.Proxy)
 			proxy.SetTunnel(&tmp)
 
 		} else if tunnel.Protocol == types.ProtocolSOCKS {

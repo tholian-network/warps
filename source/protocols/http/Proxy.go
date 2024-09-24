@@ -15,6 +15,7 @@ type Proxy struct {
 	Cache    interfaces.ProxyCache `json:"cache"`
 	Tunnel   interfaces.Tunnel     `json:"tunnel"`
 	Resolver interfaces.Resolver   `json:"resolver"`
+	listener *net.TCPListener
 }
 
 func NewProxy(host string, port uint16, cache interfaces.ProxyCache) Proxy {
@@ -154,6 +155,19 @@ func (proxy *Proxy) SetTunnel(value interfaces.Tunnel) {
 	proxy.Tunnel = value
 }
 
+func (proxy *Proxy) Destroy() error {
+
+	var err error = nil
+
+	if proxy.listener != nil {
+		err = proxy.listener.Close()
+		proxy.listener = nil
+	}
+
+	return err
+
+}
+
 func (proxy *Proxy) Listen() error {
 
 	var err error = nil
@@ -164,6 +178,8 @@ func (proxy *Proxy) Listen() error {
 	})
 
 	if err1 == nil {
+
+		proxy.listener = listener
 
 		for {
 
@@ -221,15 +237,17 @@ func (proxy *Proxy) Listen() error {
 
 					} else if packet.Method.String() != "" {
 
-						go func(connection net.Conn, packet *http.Packet) {
+						go func(connection net.Conn, packet http.Packet) {
 
-							response := proxy.RequestPacket(*packet)
+							response := proxy.RequestPacket(packet)
 
 							if response.Type == "response" {
 
-								proxy.Cache.Write(response)
-								connection.Write(response.Bytes())
+								if proxy.Cache != nil {
+									proxy.Cache.Write(response)
+								}
 
+								connection.Write(response.Bytes())
 								connection.Close()
 
 							} else {
@@ -242,7 +260,7 @@ func (proxy *Proxy) Listen() error {
 
 							}
 
-						}(connection, &packet)
+						}(connection, packet)
 
 					} else {
 						defer connection.Close()
