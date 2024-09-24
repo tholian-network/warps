@@ -18,7 +18,7 @@ func EncodeFrameRequest(packet *dns.Packet, url *net_url.URL, from int, to int) 
 
 		url_record := dns.NewRecord(bytes_domain, dns.TypeURI)
 		url_record.SetURL(url.String())
-		packet.AddAnswer(url_record)
+		packet.AddAdditional(url_record)
 
 	}
 

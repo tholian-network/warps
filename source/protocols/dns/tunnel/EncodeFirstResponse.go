@@ -19,7 +19,7 @@ func EncodeFirstResponse(packet *dns.Packet, url *net_url.URL, headers map[strin
 
 		url_record := dns.NewRecord(bytes_domain, dns.TypeURI)
 		url_record.SetURL(url.String())
-		packet.AddAnswer(url_record)
+		packet.AddAdditional(url_record)
 
 		if len(payload) > 512 {
 
@@ -42,6 +42,7 @@ func EncodeFirstResponse(packet *dns.Packet, url *net_url.URL, headers map[strin
 
 			bytes_record := dns.NewRecord(bytes_domain, dns.TypeTXT)
 			bytes_record.SetData(payload)
+			packet.AddAnswer(bytes_record)
 
 			headers_record := dns.NewRecord(headers_domain, dns.TypeTXT)
 			buffer, _ := json.Marshal(headers)
