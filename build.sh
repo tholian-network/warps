@@ -66,7 +66,7 @@ build_warps() {
 		rm "${binary}" > /dev/null;
 	fi;
 
-	go build -o "${binary}" "${ROOT}/source/cmds/tholian-warps/main.go";
+	env CGO_ENABLED=0 GOOS="${os}" GOARCH="${arch}" go build -ldflags="-s -w" -o "${binary}" "${ROOT}/source/cmds/tholian-warps/main.go";
 
 	if [[ "$?" == "0" ]]; then
 		echo -e "- Build tholian-warps (${os} / ${arch}) [\e[32mok\e[0m]";
@@ -75,6 +75,13 @@ build_warps() {
 	fi;
 
 	chmod +x "${binary}";
+	strip "${binary}";
+
+	if [[ "$?" == "0" ]]; then
+		echo -e "- Strip tholian-warps (${os} / ${arch}) [\e[32mok\e[0m]";
+	else
+		echo -e "- Strip tholian-warps (${os} / ${arch}) [\e[31mfail\e[0m]";
+	fi;
 
 }
 
@@ -85,7 +92,7 @@ if [[ "${FLAG}" == "--renew-certificate" ]]; then
 		renew_certificate;
 
 	else
-		echo "Please install OpenSSL to renew the Tholian Warps MITM certificate.";
+		echo "Please install OpenSSL to renew the Tholian Warps RootCA certificate.";
 		exit 1;
 	fi;
 

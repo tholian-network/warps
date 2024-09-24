@@ -3,12 +3,14 @@ package dns
 import "tholian-endpoint/protocols/dns"
 import "tholian-endpoint/protocols/http"
 import "tholian-endpoint/types"
+import "tholian-warps/console"
 import dns_tunnel "tholian-warps/protocols/dns/tunnel"
 import "strconv"
 
 type Tunnel struct {
-	Host string `json:"host"`
-	Port uint16 `json:"port"`
+	Host  string `json:"host"`
+	Port  uint16 `json:"port"`
+	debug bool
 }
 
 func NewTunnel(host string, port uint16) Tunnel {
@@ -17,6 +19,7 @@ func NewTunnel(host string, port uint16) Tunnel {
 
 	tunnel.Host = host
 	tunnel.Port = port
+	tunnel.debug = false
 
 	return tunnel
 
@@ -62,6 +65,10 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 
 	var response http.Packet
 
+	if tunnel.debug {
+		console.Group("dns/Tunnel/RequestPacket")
+	}
+
 	tunnel_request := dns.NewPacket()
 	tunnel_request.SetType("query")
 
@@ -76,7 +83,17 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 		Schema:    "DEFAULT",
 	})
 
+	if tunnel.debug {
+		console.Warn("Request:")
+		console.Inspect(tunnel_request)
+	}
+
 	first_response := dns.ResolvePacket(tunnel_request)
+
+	if tunnel.debug {
+		console.Warn("First Response:")
+		console.Inspect(tunnel_request)
+	}
 
 	if first_response.Type == "response" {
 
@@ -88,7 +105,9 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 
 			_, payload_from, payload_to, payload_size := dns_tunnel.DecodeContentRange(&first_response)
 
-			// fmt.Println("Tunnel: content-range", payload_from, "-", payload_to, "/", payload_size)
+			if tunnel.debug {
+				console.Log("First Response Content-Range: " + strconv.Itoa(payload_from) + "-" + strconv.Itoa(payload_to) + "/" + strconv.Itoa(payload_size))
+			}
 
 			if payload_from == 0 && payload_to != 0 && payload_size > 512 {
 
@@ -107,8 +126,6 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 						frame_to = payload_size - 1
 					}
 
-					// fmt.Println("Tunnel: frame request", frame_from, "-", frame_to)
-
 					frame_request := dns.NewPacket()
 					frame_request.SetType("query")
 
@@ -123,11 +140,17 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 						Schema:    "DEFAULT",
 					})
 
+					if tunnel.debug {
+						console.Log("Frame Request Range: " + strconv.Itoa(frame_from) + "-" + strconv.Itoa(frame_to))
+					}
+
 					frame_response := dns.ResolvePacket(frame_request)
 
 					_, frame_response_from, frame_response_to, frame_response_size := dns_tunnel.DecodeContentRange(&frame_response)
 
-					// fmt.Println("Tunnel: frame response", frame_response_from, "-", frame_response_to, "/", frame_response_size)
+					if tunnel.debug {
+						console.Log("Frame Response Content-Range: " + strconv.Itoa(frame_response_from) + "-" + strconv.Itoa(frame_response_to) + "/" + strconv.Itoa(frame_response_size))
+					}
 
 					if frame_from == frame_response_from && frame_to == frame_response_to && payload_size == frame_response_size {
 						payload = append(payload, dns_tunnel.DecodePayload(&frame_response)...)
@@ -140,6 +163,7 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 
 				if range_error == false {
 
+
 					response = http.NewPacket()
 					response.SetURL(*request.URL)
 					response.SetStatus(http.StatusOK)
@@ -149,6 +173,12 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 					}
 
 					response.SetHeader("Content-Range", "bytes " + strconv.Itoa(0) + "-" + strconv.Itoa(len(payload) - 1) + "/" + strconv.Itoa(len(payload)))
+
+					if tunnel.debug {
+						console.Info("Response Content-Range: 0-" + strconv.Itoa(len(payload) - 1) + "/" + strconv.Itoa(len(payload)))
+						console.Inspect(response)
+					}
+
 					response.SetPayload(payload)
 
 				} else {
@@ -171,6 +201,12 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 				}
 
 				response.SetHeader("Content-Range", "bytes " + strconv.Itoa(payload_from) + "-" + strconv.Itoa(payload_to) + "/" + strconv.Itoa(payload_size))
+
+				if tunnel.debug {
+					console.Info("Response Content-Range: 0-" + strconv.Itoa(payload_to) + "/" + strconv.Itoa(payload_size))
+					console.Inspect(response)
+				}
+
 				response.SetPayload(payload)
 
 			} else {
@@ -193,6 +229,14 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 
 	}
 
+	if tunnel.debug {
+		console.GroupEnd("dns/Tunnel/RequestPacket")
+	}
+
 	return response
 
+}
+
+func (tunnel *Tunnel) SetDebug(value bool) {
+	tunnel.debug = value
 }
