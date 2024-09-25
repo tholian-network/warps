@@ -2,6 +2,7 @@ package dns
 
 import "tholian-endpoint/protocols/dns"
 import "tholian-endpoint/protocols/http"
+import "tholian-warps/console"
 import "tholian-warps/interfaces"
 import dns_tunnel "tholian-warps/protocols/dns/tunnel"
 import utils_http "tholian-warps/utils/protocols/http"
@@ -65,6 +66,7 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 					response.SetType("response")
 					response.SetIdentifier(query.Identifier)
 					response.SetResponseCode(dns.ResponseCodeNoError)
+					response.Flags.RecursionAvailable = true
 
 					if len(http_response.Payload) >= 512 {
 						dns_tunnel.EncodeFirstResponse(&response, request_url, http_response.Headers, http_response.Payload)
@@ -74,11 +76,9 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 
 				} else {
 
-					response = dns.NewPacket()
+					response := dns.NewPacket()
 					response.SetType("response")
 					response.SetIdentifier(query.Identifier)
-					response.SetResponseCode(dns.ResponseCodeNonExistDomain)
-
 					dns_tunnel.EncodeErrorResponse(&response, request_url, request_from, request_to)
 
 				}
@@ -105,7 +105,6 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 							response = dns.NewPacket()
 							response.SetType("response")
 							response.SetIdentifier(query.Identifier)
-							response.SetResponseCode(dns.ResponseCodeNoError)
 
 							dns_tunnel.EncodeFrameResponse(&response, request_url, http_response.Headers, http_response.Payload, partial_from, partial_to, partial_size)
 
@@ -114,7 +113,6 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 							response = dns.NewPacket()
 							response.SetType("response")
 							response.SetIdentifier(query.Identifier)
-							response.SetResponseCode(dns.ResponseCodeNonExistDomain)
 
 							dns_tunnel.EncodeErrorResponse(&response, request_url, request_from, request_to)
 
@@ -127,7 +125,6 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 							response = dns.NewPacket()
 							response.SetType("response")
 							response.SetIdentifier(query.Identifier)
-							response.SetResponseCode(dns.ResponseCodeNoError)
 
 							dns_tunnel.EncodeFrameResponse(&response, request_url, http_response.Headers, http_response.Payload[request_from:request_to+1], request_from, request_to, len(http_response.Payload))
 
@@ -136,7 +133,6 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 							response = dns.NewPacket()
 							response.SetType("response")
 							response.SetIdentifier(query.Identifier)
-							response.SetResponseCode(dns.ResponseCodeNonExistDomain)
 
 							dns_tunnel.EncodeErrorResponse(&response, request_url, request_from, request_to)
 
@@ -149,7 +145,6 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 					response = dns.NewPacket()
 					response.SetType("response")
 					response.SetIdentifier(query.Identifier)
-					response.SetResponseCode(dns.ResponseCodeNonExistDomain)
 
 					dns_tunnel.EncodeErrorResponse(&response, request_url, request_from, request_to)
 
@@ -160,7 +155,6 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 				response = dns.NewPacket()
 				response.SetType("response")
 				response.SetIdentifier(query.Identifier)
-				response.SetResponseCode(dns.ResponseCodeNonExistDomain)
 
 				dns_tunnel.EncodeErrorResponse(&response, request_url, request_from, request_to)
 
@@ -171,7 +165,6 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 			response = dns.NewPacket()
 			response.SetType("response")
 			response.SetIdentifier(query.Identifier)
-			response.SetResponseCode(dns.ResponseCodeNonExistDomain)
 
 		}
 
@@ -182,7 +175,13 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 		} else if proxy.Resolver != nil {
 			response = proxy.Resolver.ResolvePacket(query)
 		} else {
-			response = dns.ResolvePacket(query)
+
+			tmp, err := dns.ResolvePacket(query)
+
+			if err == nil {
+				response = tmp
+			}
+
 		}
 
 	}
@@ -207,8 +206,8 @@ func (proxy *Proxy) RequestPacket(request http.Packet) http.Packet {
 
 		if proxy.Resolver != nil {
 
-			request.SetResolveMethod(func(domain string) dns.Packet {
-				return proxy.Resolver.Resolve(domain)
+			request.SetResolveMethod(func(domain string) (dns.Packet, error) {
+				return proxy.Resolver.Resolve(domain), nil
 			})
 			request.Resolve()
 
@@ -284,32 +283,51 @@ func (proxy *Proxy) Listen() error {
 
 		for {
 
-			buffer := make([]byte, 1232)
-			length, remote, err := listener.ReadFromUDP(buffer)
+			if proxy.listener != nil {
 
-			if err == nil {
+				buffer := make([]byte, 1232)
+				length, remote, err2 := proxy.listener.ReadFromUDP(buffer)
 
-				packet := dns.Parse(buffer[0:length])
-				buffer = make([]byte, 1232)
+				if err2 == nil {
 
-				if packet.Type == "query" && len(packet.Questions) > 0 {
+					packet := dns.Parse(buffer[0:length])
+					buffer = make([]byte, 1232)
 
-					go func(remote net.Addr, packet dns.Packet) {
+					if packet.Type == "query" && len(packet.Questions) > 0 {
 
-						response := proxy.ResolvePacket(packet)
+						go func(remote net.Addr, packet dns.Packet) {
 
-						if response.Type == "response" {
+							response := proxy.ResolvePacket(packet)
 
-							if proxy.listener != nil {
-								proxy.listener.WriteTo(response.Bytes(), remote)
+							if response.Type == "response" {
+
+								if proxy.listener != nil {
+									proxy.listener.WriteTo(response.Bytes(), remote)
+								}
+
+							} else {
+
+								console.Error("Cannot resolve packet")
+								console.Inspect(packet)
+
 							}
 
-						}
+						}(remote, packet)
 
-					}(remote, packet)
+					}
+
+				} else {
+
+					str := err2.Error()
+
+					if strings.HasSuffix(str, "use of closed network connection") {
+						break
+					}
 
 				}
 
+			} else {
+				break
 			}
 
 		}

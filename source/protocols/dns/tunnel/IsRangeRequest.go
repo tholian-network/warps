@@ -9,20 +9,13 @@ func IsRangeRequest(query *dns.Packet) bool {
 
 	if query.Type == "query" {
 
-		for a := 0; a < len(query.Answers); a++ {
+		for a := 0; a < len(query.Additionals); a++ {
 
-			record := query.Answers[a]
+			question := query.Additionals[a]
 
-			if record.Type == dns.TypeURI && strings.HasPrefix(record.Name, "bytes.") {
-
-				tmp := strings.Split(record.Name, ".")
-
-				// bytes.0-123.124.example.com
-				if len(tmp) > 3 && tmp[0] == "bytes" && strings.Contains(tmp[1], "-") {
-					result = true
-					break
-				}
-
+			if question.Type == dns.TypeURI && strings.Contains(question.Name, ".bytes.") {
+				result = true
+				break
 			}
 
 		}

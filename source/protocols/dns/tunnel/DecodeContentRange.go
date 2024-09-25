@@ -12,7 +12,7 @@ func DecodeContentRange(packet *dns.Packet) (int, int, int) {
 	var to   int = -1
 	var size int = -1
 
-	if packet.Type == "request" {
+	if packet.Type == "query" {
 
 		headers_domain := ""
 
@@ -27,7 +27,7 @@ func DecodeContentRange(packet *dns.Packet) (int, int, int) {
 
 		}
 
-		if from == -1 && to == -1 && headers_domain != "" {
+		if headers_domain != "" {
 
 			tmp1 := headers_domain[0:strings.Index(headers_domain, ".headers.")]
 

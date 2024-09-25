@@ -67,7 +67,27 @@ func (resolver *Resolver) ResolvePacket(query dns.Packet) dns.Packet {
 	} else if resolver.Tunnel != nil {
 		response = resolver.Tunnel.ResolvePacket(query)
 	} else {
-		response = dns.ResolvePacket(query)
+
+		tmp, err := dns.ResolvePacket(query)
+
+		if err == nil && tmp.Type == "response" {
+
+			response = tmp
+
+		} else {
+
+			response = dns.NewPacket()
+			response.SetType("response")
+			response.SetIdentifier(query.Identifier)
+			response.SetResponseCode(dns.ResponseCodeNonExistDomain)
+			response.Flags.RecursionAvailable = true
+
+			for q := 0; q < len(query.Questions); q++ {
+				response.AddQuestion(query.Questions[q])
+			}
+
+		}
+
 	}
 
 	return response

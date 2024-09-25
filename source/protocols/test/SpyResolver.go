@@ -60,7 +60,13 @@ func (resolver *SpyResolver) Resolve(subject string) dns.Packet {
 	}
 
 	if resolver.isOnline == true {
-		response = dns.Resolve(subject)
+
+		tmp, err := dns.Resolve(subject)
+
+		if err == nil {
+			response = tmp
+		}
+
 	}
 
 	resolver.Resolved = resolved
@@ -89,7 +95,13 @@ func (resolver *SpyResolver) ResolvePacket(query dns.Packet) dns.Packet {
 		}
 
 		if resolver.isOnline == true {
-			response = dns.ResolvePacket(query)
+
+			tmp, err := dns.ResolvePacket(query)
+
+			if err == nil {
+				response = tmp
+			}
+
 		}
 
 		resolver.WasResolved = true

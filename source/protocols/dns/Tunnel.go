@@ -38,9 +38,9 @@ func (tunnel *Tunnel) ResolvePacket(query dns.Packet) dns.Packet {
 		Schema:    "DEFAULT",
 	})
 
-	tunnel_response := dns.ResolvePacket(tunnel_query)
+	tunnel_response, err := dns.ResolvePacket(tunnel_query)
 
-	if tunnel_response.Type == "response" {
+	if err == nil && tunnel_response.Type == "response" {
 
 		response = tunnel_response
 
@@ -50,6 +50,7 @@ func (tunnel *Tunnel) ResolvePacket(query dns.Packet) dns.Packet {
 		response.SetType("response")
 		response.SetIdentifier(query.Identifier)
 		response.SetResponseCode(dns.ResponseCodeNonExistDomain)
+		response.Flags.RecursionAvailable = true
 
 		for q := 0; q < len(query.Questions); q++ {
 			response.AddQuestion(query.Questions[q])
@@ -85,17 +86,12 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 
 	if tunnel.debug {
 		console.Warn("Request:")
-		console.Inspect(tunnel_request)
+		console.Inspect(tunnel_request.Server)
 	}
 
-	first_response := dns.ResolvePacket(tunnel_request)
+	first_response, first_response_err := dns.ResolvePacket(tunnel_request)
 
-	if tunnel.debug {
-		console.Warn("First Response:")
-		console.Inspect(tunnel_request)
-	}
-
-	if first_response.Type == "response" {
+	if first_response_err == nil && first_response.Type == "response" {
 
 		if first_response.Codes.Response == dns.ResponseCodeNoError {
 
@@ -144,16 +140,23 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 						console.Log("Frame Request Range: " + strconv.Itoa(frame_from) + "-" + strconv.Itoa(frame_to))
 					}
 
-					frame_response := dns.ResolvePacket(frame_request)
+					frame_response, frame_response_err := dns.ResolvePacket(frame_request)
 
-					frame_response_from, frame_response_to, frame_response_size := dns_tunnel.DecodeContentRange(&frame_response)
+					if frame_response_err == nil && frame_response.Type == "response" {
 
-					if tunnel.debug {
-						console.Log("Frame Response Content-Range: " + strconv.Itoa(frame_response_from) + "-" + strconv.Itoa(frame_response_to) + "/" + strconv.Itoa(frame_response_size))
-					}
+						frame_response_from, frame_response_to, frame_response_size := dns_tunnel.DecodeContentRange(&frame_response)
 
-					if frame_from == frame_response_from && frame_to == frame_response_to && payload_size == frame_response_size {
-						payload = append(payload, dns_tunnel.DecodePayload(&frame_response)...)
+						if tunnel.debug {
+							console.Log("Frame Response Content-Range: " + strconv.Itoa(frame_response_from) + "-" + strconv.Itoa(frame_response_to) + "/" + strconv.Itoa(frame_response_size))
+						}
+
+						if frame_from == frame_response_from && frame_to == frame_response_to && payload_size == frame_response_size {
+							payload = append(payload, dns_tunnel.DecodePayload(&frame_response)...)
+						} else {
+							range_error = true
+							break
+						}
+
 					} else {
 						range_error = true
 						break
@@ -200,13 +203,12 @@ func (tunnel *Tunnel) RequestPacket(request http.Packet) http.Packet {
 				}
 
 				response.SetHeader("Content-Range", "bytes " + strconv.Itoa(payload_from) + "-" + strconv.Itoa(payload_to) + "/" + strconv.Itoa(payload_size))
+				response.SetPayload(payload)
 
 				if tunnel.debug {
 					console.Info("Response Content-Range: 0-" + strconv.Itoa(payload_to) + "/" + strconv.Itoa(payload_size))
 					console.Inspect(response)
 				}
-
-				response.SetPayload(payload)
 
 			} else {
 

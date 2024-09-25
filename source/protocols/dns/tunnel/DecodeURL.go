@@ -10,9 +10,9 @@ func DecodeURL(packet *dns.Packet) *net_url.URL {
 
 	if packet.Type == "query" {
 
-		for a := 0; a < len(packet.Answers); a++ {
+		for a := 0; a < len(packet.Additionals); a++ {
 
-			record := packet.Answers[a]
+			record := packet.Additionals[a]
 
 			if record.Type == dns.TypeURI && strings.Contains(record.Name, ".bytes.") {
 

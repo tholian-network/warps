@@ -40,7 +40,13 @@ func (tunnel *SpyTunnel) ResolvePacket(query dns.Packet) dns.Packet {
 		}
 
 		if tunnel.isOnline == true {
-			response = dns.ResolvePacket(query)
+
+			tmp, err := dns.ResolvePacket(query)
+
+			if err == nil {
+				response = tmp
+			}
+
 		}
 
 		tunnel.WasResolved = true

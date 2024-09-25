@@ -38,6 +38,9 @@ func EncodeFrameResponse(packet *dns.Packet, url *net_url.URL, headers map[strin
 		headers_record.SetData(buffer)
 		packet.AddAnswer(headers_record)
 
+		packet.SetResponseCode(dns.ResponseCodeNoError)
+		packet.Flags.RecursionAvailable = true
+
 	}
 
 }

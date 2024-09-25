@@ -27,7 +27,9 @@ func EncodeErrorResponse(packet *dns.Packet, url *net_url.URL, from int, to int)
 		packet.AddQuestion(dns.NewQuestion(bytes_domain, dns.TypeURI))
 		packet.AddQuestion(dns.NewQuestion(bytes_domain, dns.TypeTXT))
 		packet.AddQuestion(dns.NewQuestion(headers_domain, dns.TypeTXT))
+
 		packet.SetResponseCode(dns.ResponseCodeNonExistDomain)
+		packet.Flags.RecursionAvailable = true
 
 	}
 
