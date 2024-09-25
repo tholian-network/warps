@@ -47,7 +47,13 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 	} else if proxy.Tunnel != nil {
 		response = proxy.Tunnel.ResolvePacket(query)
 	} else {
-		response = dns.ResolvePacket(query)
+
+		tmp, err := dns.ResolvePacket(query)
+
+		if err == nil {
+			response = tmp
+		}
+
 	}
 
 	return response
@@ -105,8 +111,8 @@ func (proxy *Proxy) RequestPacket(request http.Packet) http.Packet {
 
 			if proxy.Resolver != nil {
 
-				request.SetResolveMethod(func(domain string) dns.Packet {
-					return proxy.Resolver.Resolve(domain)
+				request.SetResolveMethod(func(domain string) (dns.Packet, error) {
+					return proxy.Resolver.Resolve(domain), nil
 				})
 				request.Resolve()
 

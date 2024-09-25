@@ -170,10 +170,10 @@ func (proxy *Proxy) ResolvePacket(query dns.Packet) dns.Packet {
 
 	} else {
 
-		if proxy.Tunnel != nil {
-			response = proxy.Tunnel.ResolvePacket(query)
-		} else if proxy.Resolver != nil {
+		if proxy.Resolver != nil {
 			response = proxy.Resolver.ResolvePacket(query)
+		} else if proxy.Tunnel != nil {
+			response = proxy.Tunnel.ResolvePacket(query)
 		} else {
 
 			tmp, err := dns.ResolvePacket(query)
