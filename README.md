@@ -12,8 +12,9 @@ The goal of this project is to find out how feasible common NAT breaking
 and firewall bypassing techniques are and whether they can be used to
 build a reliable mesh network that's based on a peer-to-peer architecture.
 
+### Network Architecture
 
-# Network Architecture
+![network-architecture.png](https://github.com/tholian-network/warps/blob/master/assets/network-chart.png?raw=true)
 
 1. A `tunnel` instance tunnels network traffic through a `forward` or `gateway` instance to access the internet.
 2. A `tunnel` uses the initial configured network protocol.
@@ -23,16 +24,25 @@ build a reliable mesh network that's based on a peer-to-peer architecture.
 6. All instances use a local [ProxyCache](./source/structs/ProxyCache.go) and [ResolverCache](./source/structs/ResolverCache.go).
 7. All instances can rotate encryption keys and can scatter network traffic on-demand.
 
+### Building
 
-## How to use Tunnels and Gateways
+:construction: Highly Experimental at this point. Use software at your own risk! :construction:
+
+```bash
+bash build.sh;
+sudo cp ./build/tholian-warps /usr/bin/tholian-warps;
+
+# Show CLI usage help
+tholian-warps;
+```
+
+### Usage: Tunnels and Gateways
 
 The easiest way to use Warps is with running a Warps `gateway` on your own VPS that is connected to the internet,
 and a locally running Warps `tunnel`.
 
 As a defaulted network protocol, it is best to use `dns`, as that usually works to bypass typical firewall setups.
 Alternative supported network protocols are documented further down in this document.
-
-![network-architecture.png](https://github.com/tholian-network/warps/blob/master/assets/network-chart.png?raw=true)
 
 ```bash
 # On your VPS server (1.3.3.7)
@@ -43,8 +53,7 @@ tholian-warps tunnel "any" "dns://1.3.3.7:1053";
 curl -x localhost:1080 http://google.com;
 ```
 
-
-## How to use Proxy Chains
+## Usage: Proxy Chains
 
 Warps can be chained via multiple proxies, without a limit on how many network hops you want to the public internet.
 In this example, we are routing local web traffic through 3 instances before the traffic hits the clearnet.
@@ -64,20 +73,6 @@ tholian-warps forward "dns://1.3.3.9:1339" "http://1.3.3.8:1338";
 tholian-warps tunnel "any" "dns://1.3.3.9:1339";
 curl -x localhost:1080 http://google.com;
 ```
-
-
-# Usage
-
-:construction: Highly Experimental at this point - Use at own risk! :construction:
-
-```bash
-bash build.sh;
-sudo cp ./build/tholian-warps /usr/bin/tholian-warps;
-
-# Show CLI usage help
-tholian-warps;
-```
-
 
 # Data Compressors
 
