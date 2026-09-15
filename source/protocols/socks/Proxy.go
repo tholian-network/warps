@@ -5,11 +5,10 @@ import "tholian-warps/protocols/http"
 import "tholian-warps/console"
 import "tholian-warps/interfaces"
 import http_tunnel "tholian-warps/protocols/httptunnel/tunnel"
-// import utils_net "tholian-warps/utils/net"
-import "errors"
-// import "net"
+import "io"
+import "net"
+import "strconv"
 import "strings"
-import "time"
 
 type Proxy struct {
 	Host     string                `json:"host"`
@@ -17,6 +16,7 @@ type Proxy struct {
 	Cache    interfaces.ProxyCache `json:"cache"`
 	Tunnel   interfaces.Tunnel     `json:"tunnel"`
 	Resolver interfaces.Resolver   `json:"resolver"`
+	listener *net.TCPListener
 }
 
 func NewProxy(host string, port uint16, cache interfaces.ProxyCache) Proxy {
@@ -33,6 +33,7 @@ func NewProxy(host string, port uint16, cache interfaces.ProxyCache) Proxy {
 
 	proxy.Port = port
 	proxy.Cache = cache
+	proxy.listener = nil
 
 	return proxy
 
@@ -162,60 +163,162 @@ func (proxy *Proxy) SetTunnel(value interfaces.Tunnel) {
 	proxy.Tunnel = value
 }
 
+func (proxy *Proxy) Destroy() error {
+
+	var err error = nil
+
+	if proxy.listener != nil {
+		err = proxy.listener.Close()
+		proxy.listener = nil
+	}
+
+	return err
+
+}
+
 func (proxy *Proxy) Listen() error {
 
 	var err error = nil
 
-	console.Error("TODO: SOCKS Proxy is not implemented yet")
-	err = errors.New("SOCKS Proxy is not implemented yet")
+	listener, err1 := net.ListenTCP("tcp", &net.TCPAddr{
+		Port: int(proxy.Port),
+		IP:   net.ParseIP(proxy.Host),
+	})
 
-	for {
+	if err1 == nil {
 
-		// Do Nothing
-		time.Sleep(1 * time.Second)
+		proxy.listener = listener
 
-		if 1 == 2 {
-			break
+		for {
+
+			connection, err2 := listener.Accept()
+
+			if err2 == nil {
+
+				go proxy.handleConnection(connection)
+
+			} else {
+
+				str := err2.Error()
+
+				if strings.HasSuffix(str, "use of closed network connection") {
+					break
+				}
+
+				console.Error(str)
+
+			}
+
 		}
 
+	} else {
+		err = err1
 	}
 
-	// listener, err1 := net.ListenTCP("tcp", &net.TCPAddr{
-	// 	Port: int(proxy.Port),
-	// 	IP:   net.ParseIP(proxy.Host),
-	// })
-
-	// if err1 == nil {
-
-	// 	for {
-
-	// 		connection, err2 := listener.Accept()
-
-	// 		if err2 == nil {
-
-	// 			buffer := utils_net.ReadConnection(connection)
-
-	// 			if len(buffer) > 0 {
-
-	// 				// TODO: Implement SOCKS protocol
-
-	// 				// packet := socks.Parse(buffer)
-	// 				// console.Inspect(packet)
-
-	// 				defer connection.Close()
-
-	// 			} else {
-	// 				defer connection.Close()
-	// 			}
-
-	// 		}
-
-	// 	}
-
-	// } else {
-	// 	err = err1
-	// }
-
 	return err
+
+}
+
+func (proxy *Proxy) handleConnection(connection net.Conn) {
+
+	defer connection.Close()
+
+	header := make([]byte, 2)
+
+	if _, err := io.ReadFull(connection, header); err != nil {
+		return
+	}
+
+	if header[0] != 0x05 {
+		return
+	}
+
+	methods := make([]byte, int(header[1]))
+
+	if _, err := io.ReadFull(connection, methods); err != nil {
+		return
+	}
+
+	if _, err := connection.Write([]byte{0x05, 0x00}); err != nil {
+		return
+	}
+
+	request := make([]byte, 4)
+
+	if _, err := io.ReadFull(connection, request); err != nil {
+		return
+	}
+
+	if request[0] != 0x05 || request[1] != 0x01 {
+		connection.Write([]byte{0x05, 0x07, 0x00, 0x01, 0, 0, 0, 0, 0, 0})
+		return
+	}
+
+	var host string
+
+	if request[3] == 0x01 {
+
+		address := make([]byte, 4)
+
+		if _, err := io.ReadFull(connection, address); err != nil {
+			return
+		}
+
+		host = net.IP(address).String()
+
+	} else if request[3] == 0x04 {
+
+		address := make([]byte, 16)
+
+		if _, err := io.ReadFull(connection, address); err != nil {
+			return
+		}
+
+		host = net.IP(address).String()
+
+	} else if request[3] == 0x03 {
+
+		length := make([]byte, 1)
+
+		if _, err := io.ReadFull(connection, length); err != nil {
+			return
+		}
+
+		address := make([]byte, int(length[0]))
+
+		if _, err := io.ReadFull(connection, address); err != nil {
+			return
+		}
+
+		host = string(address)
+
+	} else {
+		connection.Write([]byte{0x05, 0x08, 0x00, 0x01, 0, 0, 0, 0, 0, 0})
+		return
+	}
+
+	port_bytes := make([]byte, 2)
+
+	if _, err := io.ReadFull(connection, port_bytes); err != nil {
+		return
+	}
+
+	port := int(port_bytes[0])<<8 | int(port_bytes[1])
+
+	target, err := net.Dial("tcp", net.JoinHostPort(host, strconv.Itoa(port)))
+
+	if err != nil {
+		connection.Write([]byte{0x05, 0x05, 0x00, 0x01, 0, 0, 0, 0, 0, 0})
+		return
+	}
+
+	defer target.Close()
+
+	if _, err := connection.Write([]byte{0x05, 0x00, 0x00, 0x01, 0, 0, 0, 0, 0, 0}); err != nil {
+		return
+	}
+
+	go io.Copy(target, connection)
+	io.Copy(connection, target)
 
 }
