@@ -1,6 +1,6 @@
 package test
 
-import "tholian-endpoint/protocols/dns"
+import "tholian-warps/protocols/dns"
 
 type SpyResolverCache struct {
 	ResponseExists bool        `json:"response_exists"`

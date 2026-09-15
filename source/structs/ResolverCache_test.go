@@ -1,6 +1,6 @@
 package structs
 
-import "tholian-endpoint/protocols/dns"
+import "tholian-warps/protocols/dns"
 import "bytes"
 import "os"
 import "testing"

@@ -1,7 +1,7 @@
 package test
 
-import "tholian-endpoint/protocols/dns"
-import "tholian-endpoint/protocols/http"
+import "tholian-warps/protocols/dns"
+import "tholian-warps/protocols/http"
 
 type SpyTunnel struct {
 	Resolved     string `json:"resolved"`

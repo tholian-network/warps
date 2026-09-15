@@ -1,6 +1,6 @@
 package test
 
-import "tholian-endpoint/protocols/http"
+import "tholian-warps/protocols/http"
 
 type SpyProxyCache struct {
 	ResponseExists  bool         `json:"response_exists"`

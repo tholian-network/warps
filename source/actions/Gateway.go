@@ -1,10 +1,10 @@
 package actions
 
-import "tholian-endpoint/types"
+import "tholian-warps/types"
 import "tholian-warps/certificates"
 import "tholian-warps/console"
-import "tholian-warps/protocols/dns"
-import "tholian-warps/protocols/http"
+import "tholian-warps/protocols/dnstunnel"
+import "tholian-warps/protocols/httptunnel"
 import "tholian-warps/protocols/https"
 import "tholian-warps/protocols/socks"
 import "tholian-warps/structs"
@@ -19,11 +19,11 @@ func Gateway(folder string, listen *arguments.Config) {
 		web_cache := structs.NewProxyCache(folder + "/proxy")
 		dns_cache := structs.NewResolverCache(folder + "/resolver")
 
-		resolver := dns.NewResolver("127.0.0.1", 53535, &dns_cache)
-		dns_proxy := dns.NewProxy(listen.Host, 1053, &web_cache)
+		resolver := dnstunnel.NewResolver("127.0.0.1", 53535, &dns_cache)
+		dns_proxy := dnstunnel.NewProxy(listen.Host, 1053, &web_cache)
 		dns_proxy.SetResolver(&resolver)
 
-		http_proxy := http.NewProxy(listen.Host, 1080, &web_cache)
+		http_proxy := httptunnel.NewProxy(listen.Host, 1080, &web_cache)
 		http_proxy.SetResolver(&resolver)
 
 		https_proxy := https.NewProxy(listen.Host, 1443, &web_cache)
@@ -89,8 +89,8 @@ func Gateway(folder string, listen *arguments.Config) {
 		web_cache := structs.NewProxyCache(folder + "/proxy")
 		dns_cache := structs.NewResolverCache(folder + "/resolver")
 
-		resolver := dns.NewResolver("127.0.0.1", 53535, &dns_cache)
-		proxy := dns.NewProxy(listen.Host, listen.Port, &web_cache)
+		resolver := dnstunnel.NewResolver("127.0.0.1", 53535, &dns_cache)
+		proxy := dnstunnel.NewProxy(listen.Host, listen.Port, &web_cache)
 		proxy.SetResolver(&resolver)
 
 		console.Log("Listening on " + listen.String())
@@ -106,8 +106,8 @@ func Gateway(folder string, listen *arguments.Config) {
 		web_cache := structs.NewProxyCache(folder + "/proxy")
 		dns_cache := structs.NewResolverCache(folder + "/resolver")
 
-		resolver := dns.NewResolver("127.0.0.1", 53535, &dns_cache)
-		proxy := http.NewProxy(listen.Host, listen.Port, &web_cache)
+		resolver := dnstunnel.NewResolver("127.0.0.1", 53535, &dns_cache)
+		proxy := httptunnel.NewProxy(listen.Host, listen.Port, &web_cache)
 		proxy.SetResolver(&resolver)
 
 		console.Log("Listening on " + listen.String())
@@ -123,7 +123,7 @@ func Gateway(folder string, listen *arguments.Config) {
 		web_cache := structs.NewProxyCache(folder + "/proxy")
 		dns_cache := structs.NewResolverCache(folder + "/resolver")
 
-		resolver := dns.NewResolver("127.0.0.1", 53535, &dns_cache)
+		resolver := dnstunnel.NewResolver("127.0.0.1", 53535, &dns_cache)
 		proxy := https.NewProxy(listen.Host, listen.Port, &web_cache)
 		proxy.SetCertificate(certificates.Proxy)
 		proxy.SetResolver(&resolver)
@@ -141,7 +141,7 @@ func Gateway(folder string, listen *arguments.Config) {
 		web_cache := structs.NewProxyCache(folder + "/proxy")
 		dns_cache := structs.NewResolverCache(folder + "/resolver")
 
-		resolver := dns.NewResolver("127.0.0.1", 53535, &dns_cache)
+		resolver := dnstunnel.NewResolver("127.0.0.1", 53535, &dns_cache)
 		proxy := socks.NewProxy(listen.Host, listen.Port, &web_cache)
 		proxy.SetResolver(&resolver)
 

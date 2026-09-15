@@ -1,10 +1,10 @@
 package https
 
-import "tholian-endpoint/protocols/dns"
-import "tholian-endpoint/protocols/http"
+import "tholian-warps/protocols/dns"
+import "tholian-warps/protocols/http"
 import "tholian-warps/console"
 import "tholian-warps/interfaces"
-import http_tunnel "tholian-warps/protocols/http/tunnel"
+import http_tunnel "tholian-warps/protocols/httptunnel/tunnel"
 import utils_net "tholian-warps/utils/net"
 import "crypto/tls"
 import "net"

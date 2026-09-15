@@ -1,6 +1,6 @@
 package structs
 
-import "tholian-endpoint/protocols/http"
+import "tholian-warps/protocols/http"
 import net_url "net/url"
 import "os"
 import "strconv"

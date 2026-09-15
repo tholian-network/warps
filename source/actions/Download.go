@@ -1,11 +1,11 @@
 package actions
 
-import endpoint_http "tholian-endpoint/protocols/http"
-import "tholian-endpoint/types"
+import "tholian-warps/protocols/http"
+import "tholian-warps/types"
 import "tholian-warps/certificates"
 import "tholian-warps/console"
-import "tholian-warps/protocols/dns"
-import "tholian-warps/protocols/http"
+import "tholian-warps/protocols/dnstunnel"
+import "tholian-warps/protocols/httptunnel"
 import "tholian-warps/protocols/https"
 import "tholian-warps/protocols/socks"
 import "tholian-warps/utils/arguments"
@@ -18,22 +18,22 @@ func Download(_ string, tunnel *arguments.Config, download *net_url.URL) {
 
 	console.Group("actions/Download")
 
-	request := endpoint_http.NewPacket()
+	request := http.NewPacket()
 	request.SetURL(*download)
-	request.SetMethod(endpoint_http.MethodGet)
+	request.SetMethod(http.MethodGet)
 	request.SetHeader("Range", "bytes=0-")
 
-	var response endpoint_http.Packet
+	var response http.Packet
 
 	if tunnel.Protocol == types.ProtocolDNS {
 
-		tmp := dns.NewTunnel(tunnel.Host, tunnel.Port)
+		tmp := dnstunnel.NewTunnel(tunnel.Host, tunnel.Port)
 		tmp.SetDebug(true)
 		response = tmp.RequestPacket(request)
 
 	} else if tunnel.Protocol == types.ProtocolHTTP {
 
-		tmp := http.NewTunnel(tunnel.Host, tunnel.Port)
+		tmp := httptunnel.NewTunnel(tunnel.Host, tunnel.Port)
 		response = tmp.RequestPacket(request)
 
 	} else if tunnel.Protocol == types.ProtocolHTTPS {

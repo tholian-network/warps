@@ -1,6 +1,6 @@
 package arguments
 
-import "tholian-endpoint/types"
+import "tholian-warps/types"
 import net_url "net/url"
 import "strconv"
 import "strings"

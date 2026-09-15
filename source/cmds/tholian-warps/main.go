@@ -1,6 +1,6 @@
 package main
 
-import "tholian-endpoint/types"
+import "tholian-warps/types"
 import "tholian-warps/actions"
 import "tholian-warps/console"
 import "tholian-warps/utils/arguments"

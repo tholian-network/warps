@@ -1,7 +1,7 @@
 package interfaces
 
-import "tholian-endpoint/protocols/dns"
-import "tholian-endpoint/protocols/http"
+import "tholian-warps/protocols/dns"
+import "tholian-warps/protocols/http"
 
 type Tunnel interface {
 	ResolvePacket(dns.Packet)  dns.Packet

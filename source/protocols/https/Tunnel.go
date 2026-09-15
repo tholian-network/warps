@@ -1,9 +1,9 @@
 package https
 
-import "tholian-endpoint/protocols/dns"
-import "tholian-endpoint/protocols/http"
-import "tholian-endpoint/types"
-import http_tunnel "tholian-warps/protocols/http/tunnel"
+import "tholian-warps/protocols/dns"
+import "tholian-warps/protocols/http"
+import "tholian-warps/types"
+import http_tunnel "tholian-warps/protocols/httptunnel/tunnel"
 import "crypto/tls"
 import net_url "net/url"
 import "strconv"

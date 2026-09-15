@@ -1,6 +1,6 @@
 package interfaces
 
-import "tholian-endpoint/protocols/http"
+import "tholian-warps/protocols/http"
 
 type ProxyCache interface {
 	Exists(http.Packet) bool

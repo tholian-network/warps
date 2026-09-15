@@ -1,6 +1,6 @@
 package structs
 
-import "tholian-endpoint/protocols/http"
+import "tholian-warps/protocols/http"
 import utils_url "tholian-warps/utils/net/url"
 import utils_http "tholian-warps/utils/protocols/http"
 import "encoding/json"

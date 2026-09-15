@@ -89,13 +89,17 @@ These are the data compressors that have been implemented:
 
 These are the transport protocols that have been implemented:
 
-- [x] `dns` or [protocols/dns](/source/protocols/dns) implements DNS Exfiltration
-- [x] `http` or [protocols/http](/source/protocols/http) implements HTTP Smuggling and DNS over HTTP
+- [x] `dns` or [protocols/dnstunnel](/source/protocols/dnstunnel) implements DNS Exfiltration
+- [x] `http` or [protocols/httptunnel](/source/protocols/httptunnel) implements HTTP Smuggling and DNS over HTTP
 - [x] `https` or [protocols/https](/source/protocols/https) implements HTTPS Smuggling and DNS over HTTPS
 - [ ] `icmp` or [protocols/icmp](/source/protocols/icmp) implements ICMP Knocking and DNS over ICMP
 - [ ] `ssh` or [protocols/ssh](/source/protocols/ssh) implements SSH Tunneling and DNS over SSH
 - [ ] `socks` or [protocols/socks](/source/protocols/socks) implements SOCKS Routing (e.g. for TOR/I2P usage)
 - [x] [protocols/test](/source/protocols/test) implements the `Spy` testing data structures
+
+The `dns` and `http` wire-format codec libraries (formerly `tholian-endpoint`) are vendored
+in [protocols/dns](/source/protocols/dns) and [protocols/http](/source/protocols/http), with their
+shared helpers in [types](/source/types) and [utils](/source/utils).
 
 
 # Test Coverage
@@ -110,12 +114,12 @@ These are the `go test` files that have been implemented:
 - [x] [utils/net/url/ToHostAndPort](/source/utils/net/url/ToHostAndPort_test.go)
 - [x] [utils/net/url/ToHost](/source/utils/net/url/ToHost_test.go)
 - [ ] [utils/protocols/http/IsFilteredHeader](/source/protocols/http/IsFilteredHeader_test.go)
-- [x] [protocols/dns/Resolver](/source/protocols/dns/Resolver_test.go)
-- [x] [protocols/dns/Proxy](/source/protocols/dns/Proxy_test.go)
-- [ ] [protocols/dns/Tunnel](/source/protocols/dns/Tunnel_test.go)
-- [x] [protocols/dns/tunnel/ToRecordName](/source/protocols/dns/tunnel/ToRecordName_test.go)
-- [x] [protocols/http/Proxy](/source/protocols/http/Proxy_test.go)
-- [ ] [protocols/http/Tunnel](/source/protocols/http/Tunnel_test.go)
+- [x] [protocols/dnstunnel/Resolver](/source/protocols/dnstunnel/Resolver_test.go)
+- [x] [protocols/dnstunnel/Proxy](/source/protocols/dnstunnel/Proxy_test.go)
+- [ ] [protocols/dnstunnel/Tunnel](/source/protocols/dnstunnel/Tunnel_test.go)
+- [x] [protocols/dnstunnel/tunnel/ToRecordName](/source/protocols/dnstunnel/tunnel/ToRecordName_test.go)
+- [x] [protocols/httptunnel/Proxy](/source/protocols/httptunnel/Proxy_test.go)
+- [ ] [protocols/httptunnel/Tunnel](/source/protocols/httptunnel/Tunnel_test.go)
 
 
 # License

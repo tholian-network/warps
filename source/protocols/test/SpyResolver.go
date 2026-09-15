@@ -1,7 +1,7 @@
 package test
 
-import "tholian-endpoint/protocols/dns"
-import "tholian-endpoint/types"
+import "tholian-warps/protocols/dns"
+import "tholian-warps/types"
 import "slices"
 import "strings"
 

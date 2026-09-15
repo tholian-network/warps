@@ -1,6 +1,6 @@
 package interfaces
 
-import "tholian-endpoint/protocols/dns"
+import "tholian-warps/protocols/dns"
 
 type Resolver interface {
 	Resolve(string)           dns.Packet
