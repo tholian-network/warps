@@ -92,20 +92,27 @@ These are the transport protocols that have been implemented:
 - [x] `dns` or [protocols/dnstunnel](/source/protocols/dnstunnel) implements DNS Exfiltration
 - [x] `http` or [protocols/httptunnel](/source/protocols/httptunnel) implements HTTP Smuggling and DNS over HTTP
 - [x] `https` or [protocols/https](/source/protocols/https) implements HTTPS Smuggling and DNS over HTTPS
-- [ ] `icmp` or [protocols/icmp](/source/protocols/icmp) implements ICMP Knocking and DNS over ICMP
+- [x] `icmp` or [protocols/icmptunnel](/source/protocols/icmptunnel) implements ICMP Knocking and DNS over ICMP
 - [ ] `ssh` or [protocols/ssh](/source/protocols/ssh) implements SSH Tunneling and DNS over SSH
-- [ ] `socks` or [protocols/socks](/source/protocols/socks) implements SOCKS Routing (e.g. for TOR/I2P usage)
+- [x] `socks` or [protocols/socks](/source/protocols/socks) implements SOCKS Routing (e.g. for TOR/I2P usage)
 - [x] [protocols/test](/source/protocols/test) implements the `Spy` testing data structures
 
-The `dns` and `http` wire-format codec libraries (formerly `tholian-endpoint`) are vendored
-in [protocols/dns](/source/protocols/dns) and [protocols/http](/source/protocols/http), with their
-shared helpers in [types](/source/types) and [utils](/source/utils).
+The `dns`, `http` and `icmp` wire-format codec libraries are vendored in
+[protocols/dns](/source/protocols/dns), [protocols/http](/source/protocols/http) and
+[protocols/icmp](/source/protocols/icmp), with their shared helpers in
+[types](/source/types) and [utils](/source/utils).
 
 
 # Test Coverage
 
 These are the `go test` files that have been implemented:
 
+- [x] [types/ASN](/source/types/ASN_test.go)
+- [x] [types/Datetime](/source/types/Datetime_test.go)
+- [x] [types/Domain](/source/types/Domain_test.go)
+- [x] [types/IPv4](/source/types/IPv4_test.go)
+- [x] [types/IPv6](/source/types/IPv6_test.go)
+- [x] [types/Time](/source/types/Time_test.go)
 - [x] [structs/ProxyCache](/source/structs/ProxyCache_test.go)
 - [x] [structs/ResolverCache](/source/structs/ResolverCache_test.go)
 - [ ] [utils/net/url/IsTrackingParameter](/source/utils/net/url/IsTrackingParameter_test.go)
@@ -114,12 +121,33 @@ These are the `go test` files that have been implemented:
 - [x] [utils/net/url/ToHostAndPort](/source/utils/net/url/ToHostAndPort_test.go)
 - [x] [utils/net/url/ToHost](/source/utils/net/url/ToHost_test.go)
 - [ ] [utils/protocols/http/IsFilteredHeader](/source/protocols/http/IsFilteredHeader_test.go)
+- [x] [protocols/dns/Type](/source/protocols/dns/Type_test.go)
+- [x] [protocols/dns/Class](/source/protocols/dns/Class_test.go)
+- [x] [protocols/dns/OperationCode](/source/protocols/dns/OperationCode_test.go)
+- [x] [protocols/dns/ResponseCode](/source/protocols/dns/ResponseCode_test.go)
+- [x] [protocols/dns/Question](/source/protocols/dns/Question_test.go)
+- [x] [protocols/dns/Record](/source/protocols/dns/Record_test.go)
+- [x] [protocols/dns/Packet](/source/protocols/dns/Packet_test.go)
+- [x] [protocols/dns/toPTRName](/source/protocols/dns/toPTRName_test.go)
+- [x] [protocols/http/Parse](/source/protocols/http/Parse_test.go)
+- [x] [protocols/http/Request](/source/protocols/http/Request_test.go)
+- [x] [protocols/icmp/Message](/source/protocols/icmp/Message_test.go)
+- [x] [protocols/icmp/Packet](/source/protocols/icmp/Packet_test.go)
+- [x] [protocols/icmp/Socket](/source/protocols/icmp/Socket_test.go)
+- [x] [protocols/icmptunnel/Resolver](/source/protocols/icmptunnel/Resolver_test.go)
+- [x] [protocols/icmptunnel/Proxy](/source/protocols/icmptunnel/Proxy_test.go)
+- [x] [protocols/icmptunnel/tunnel/EncodeRequest](/source/protocols/icmptunnel/tunnel/EncodeRequest_test.go)
+- [x] [protocols/icmptunnel/tunnel/EncodeResolveRequest](/source/protocols/icmptunnel/tunnel/EncodeResolveRequest_test.go)
 - [x] [protocols/dnstunnel/Resolver](/source/protocols/dnstunnel/Resolver_test.go)
 - [x] [protocols/dnstunnel/Proxy](/source/protocols/dnstunnel/Proxy_test.go)
-- [ ] [protocols/dnstunnel/Tunnel](/source/protocols/dnstunnel/Tunnel_test.go)
+- [x] [protocols/dnstunnel/Tunnel](/source/protocols/dnstunnel/Tunnel_test.go)
 - [x] [protocols/dnstunnel/tunnel/ToRecordName](/source/protocols/dnstunnel/tunnel/ToRecordName_test.go)
 - [x] [protocols/httptunnel/Proxy](/source/protocols/httptunnel/Proxy_test.go)
-- [ ] [protocols/httptunnel/Tunnel](/source/protocols/httptunnel/Tunnel_test.go)
+- [x] [protocols/httptunnel/Tunnel](/source/protocols/httptunnel/Tunnel_test.go)
+- [x] [protocols/https/Proxy](/source/protocols/https/Proxy_test.go)
+- [x] [protocols/https/Tunnel](/source/protocols/https/Tunnel_test.go)
+- [x] [protocols/socks/Proxy](/source/protocols/socks/Proxy_test.go)
+- [x] [protocols/socks/Tunnel](/source/protocols/socks/Tunnel_test.go)
 
 
 # License
