@@ -23,7 +23,7 @@ func showUsage() {
 
 	console.Log("")
 	console.Group("Listen and Tunnel URLs                                                           |")
-	console.Log("The \"protocol://host:port\" scheme supports the protocols \"dns\", \"http\", \"https\". |")
+	console.Log("The \"protocol://host:port\" scheme supports the protocols \"dns\", \"http\", \"https\", \"icmp\", \"socks\". |")
 	console.Log("The \"0.0.0.0\" host listens to incoming traffic on a given protocol and port.     |")
 	console.Log("The \"any\" value listens to incoming traffic on the defaulted protocols, which    |")
 	console.Log("are \"dns://0.0.0.0:1053\", \"http://0.0.0.0:1080\", and \"https://0.0.0.0:1443\".     |")

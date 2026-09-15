@@ -6,13 +6,13 @@ import "os"
 import "strconv"
 import "testing"
 
-func TestWebCache(t *testing.T) {
+func TestProxyCache(t *testing.T) {
 
 	t.Run("Exists", func(t *testing.T) {
 
 		url, _ := net_url.Parse("http://localhost:8080/folder/to/file.html")
 		tmp, _ := os.MkdirTemp("", "tholian-warps-webcache-*")
-		webcache := NewWebCache(tmp)
+		webcache := NewProxyCache(tmp)
 
 		request := http.NewPacket()
 		request.SetURL(*url)
@@ -52,7 +52,7 @@ func TestWebCache(t *testing.T) {
 
 		url, _ := net_url.Parse("http://localhost:8080/folder/to/file.html")
 		tmp, _ := os.MkdirTemp("", "tholian-warps-webcache-*")
-		webcache := NewWebCache(tmp)
+		webcache := NewProxyCache(tmp)
 
 		request := http.NewPacket()
 		request.SetURL(*url)

@@ -42,6 +42,8 @@ func ParseConfig(raw_url string) *Config {
 				protocol = types.ProtocolHTTP
 			case "https":
 				protocol = types.ProtocolHTTPS
+			case "icmp":
+				protocol = types.ProtocolICMP
 			case "socks":
 				protocol = types.ProtocolSOCKS
 			default:
@@ -117,6 +119,8 @@ func ParseConfig(raw_url string) *Config {
 						port = 1080
 					case types.ProtocolHTTPS:
 						port = 1443
+					case types.ProtocolICMP:
+						port = 10000
 					case types.ProtocolSOCKS:
 						port = 1090
 					case types.ProtocolANY:

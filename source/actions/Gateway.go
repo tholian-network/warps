@@ -6,6 +6,7 @@ import "tholian-warps/console"
 import "tholian-warps/protocols/dnstunnel"
 import "tholian-warps/protocols/httptunnel"
 import "tholian-warps/protocols/https"
+import "tholian-warps/protocols/icmptunnel"
 import "tholian-warps/protocols/socks"
 import "tholian-warps/structs"
 import "tholian-warps/utils/arguments"
@@ -143,6 +144,23 @@ func Gateway(folder string, listen *arguments.Config) {
 
 		resolver := dnstunnel.NewResolver("127.0.0.1", 53535, &dns_cache)
 		proxy := socks.NewProxy(listen.Host, listen.Port, &web_cache)
+		proxy.SetResolver(&resolver)
+
+		console.Log("Listening on " + listen.String())
+
+		err := proxy.Listen()
+
+		if err != nil {
+			console.Error(err.Error())
+		}
+
+	} else if listen.Protocol == types.ProtocolICMP {
+
+		web_cache := structs.NewProxyCache(folder + "/proxy")
+		dns_cache := structs.NewResolverCache(folder + "/resolver")
+
+		resolver := dnstunnel.NewResolver("127.0.0.1", 53535, &dns_cache)
+		proxy := icmptunnel.NewProxy(listen.Host, listen.Port, &web_cache)
 		proxy.SetResolver(&resolver)
 
 		console.Log("Listening on " + listen.String())
